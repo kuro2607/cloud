@@ -3,20 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0b1220">
-  <meta name="description" content="Cloud Diaries — a community scrapbook, planner and creative workspace.">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="favicon.png">
-  <link rel="icon" type="image/x-icon" sizes="48x48" href="favicon.ico">
-  <link rel="apple-touch-icon" href="icons/cloud-diaries-192.png">
   <title>Cloud Diaries — Scrapbook, Planner & Creative Workspace</title>
+  <meta name="description" content="Cloud Diaries — a community scrapbook, planner, and creative workspace for notes, sketches, and tactical journals.">
+  <link rel="canonical" href="https://kuro2607.github.io/cloud/">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0b1220">
+
+  <!-- ================= FAVICONS & SEARCH LOGO ================= -->
+  <link rel="icon" type="image/x-icon" href="https://kuro2607.github.io/cloud/favicon.ico">
+  <link rel="icon" type="image/png" sizes="192x192" href="https://kuro2607.github.io/cloud/icons/cloud-diaries-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="https://kuro2607.github.io/cloud/icons/cloud-diaries-512.png">
+  <link rel="apple-touch-icon" href="https://kuro2607.github.io/cloud/icons/cloud-diaries-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <!-- ================= OPEN GRAPH / SOCIAL META ================= -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Cloud Diaries">
+  <meta property="og:title" content="Cloud Diaries — Scrapbook, Planner & Creative Workspace">
+  <meta property="og:description" content="A community scrapbook, planner, and creative workspace for notes, sketches, and tactical journals.">
+  <meta property="og:url" content="https://kuro2607.github.io/cloud/">
+  <meta property="og:image" content="https://kuro2607.github.io/cloud/icons/cloud-diaries-512.png">
+  <meta name="twitter:card" content="summary">
+
+  <!-- ================= GOOGLE SITE NAME & SCHEMA ================= -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Cloud Diaries",
+    "alternateName": ["CloudDiaries", "Cloud Diaries App"],
+    "url": "https://kuro2607.github.io/cloud/",
+    "logo": "https://kuro2607.github.io/cloud/icons/cloud-diaries-512.png",
+    "description": "A community scrapbook, planner, and creative workspace."
+  }
+  </script>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Phosphor Icons -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   
-  <!-- Firebase App & Realtime Database SDKs (Compat Mode for single-file HTML) -->
+  <!-- Firebase App & Realtime Database SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
