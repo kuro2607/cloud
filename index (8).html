@@ -1,0 +1,2520 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1220">
+  <meta name="description" content="Cloud Diaries — a community scrapbook, planner and creative workspace.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="favicon.png">
+  <link rel="icon" type="image/x-icon" sizes="48x48" href="favicon.ico">
+  <link rel="apple-touch-icon" href="icons/cloud-diaries-192.png">
+  <title>Cloud Diaries — Scrapbook, Planner & Creative Workspace</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  
+  <!-- Firebase App & Realtime Database SDKs (Compat Mode for single-file HTML) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=JetBrains+Mono:wght@500;700&family=Lora:ital,wght@0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&family=Zen+Maru+Gothic:wght@700;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Lora"', 'serif'],
+            handwritten: ['"Caveat"', 'cursive'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            cute: ['"Zen Maru Gothic"', 'sans-serif'],
+            display: ['"Sora"', '"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    :root {
+      --site-bg: #0b1220;
+      --card-bg: rgba(15, 23, 42, 0.95);
+      --site-accent: #38bdf8;
+    }
+
+    body {
+      background-color: var(--site-bg);
+      color: #e6edf7;
+      transition: background-color 0.4s ease;
+    }
+
+    /* Pinterest Masonry Grid */
+    .pinterest-grid {
+      column-count: 1;
+      column-gap: 1.5rem;
+    }
+    @media (min-width: 640px) { .pinterest-grid { column-count: 2; } }
+    @media (min-width: 1024px) { .pinterest-grid { column-count: 3; } }
+    @media (min-width: 1280px) { .pinterest-grid { column-count: 4; } }
+
+    .pin-card {
+      break-inside: avoid;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Rainbow Text Effect */
+    .rainbow-text {
+      background: linear-gradient(90deg, #ff7675, #fdcb6e, #55efc4, #81ecec, #74b9ff, #a29bfe, #fd79a8, #ff7675);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: rainbowShift 3s ease infinite;
+      font-weight: 800;
+      display: inline-block;
+    }
+    @keyframes rainbowShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Highlighters */
+    .hl-pink { background-color: rgba(244,114,182,0.45); border-radius: 4px; padding: 2px 4px; }
+    .hl-yellow { background-color: rgba(253,224,71,0.45); border-radius: 4px; padding: 2px 4px; color: #fef08a !important; }
+    .hl-cyan { background-color: rgba(56,189,248,0.45); border-radius: 4px; padding: 2px 4px; }
+    .hl-green { background-color: rgba(74,222,128,0.45); border-radius: 4px; padding: 2px 4px; }
+    .hl-purple { background-color: rgba(192,132,252,0.45); border-radius: 4px; padding: 2px 4px; }
+    .hl-orange { background-color: rgba(251,146,60,0.45); border-radius: 4px; padding: 2px 4px; }
+
+    /* Washi Tape Textures */
+    .washi-floral { background: repeating-linear-gradient(45deg, #fbcfe8, #fbcfe8 10px, #f472b6 10px, #f472b6 20px); opacity: 0.9; }
+    .washi-grid { background: repeating-linear-gradient(0deg, #ddd6fe, #ddd6fe 2px, transparent 2px, transparent 8px), repeating-linear-gradient(90deg, #ddd6fe, #ddd6fe 2px, transparent 2px, transparent 8px); background-color: #ede9fe; opacity: 0.9; }
+    .washi-kraft { background: #d4a373; opacity: 0.95; }
+    .washi-holographic { background: linear-gradient(135deg, #38bdf8, #c084fc, #f472b6, #fde047); opacity: 0.9; }
+
+    /* Paper Themes */
+    .theme-slate { background: rgba(15, 23, 42, 0.95); border: 1.5px solid rgba(56, 189, 248, 0.25); color: #e6edf7; }
+    .theme-parchment { background: #27211a; border: 1.5px solid #785a3a; color: #faecd6 !important; }
+    .theme-matcha { background: #14241d; border: 1.5px solid #2e664f; color: #e1f5eb !important; }
+    .theme-sakura { background: #2a1324; border: 1.5px solid #a2387a; color: #fde8f4 !important; }
+    .theme-lavender { background: #1c152e; border: 1.5px solid #6b4fa0; color: #f3ecfc !important; }
+
+    /* Draggable Elements */
+    .drag-canvas-item {
+      position: absolute;
+      user-select: none;
+      touch-action: none;
+      cursor: grab;
+      z-index: 25;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .drag-canvas-item:active { cursor: grabbing; }
+
+    .note-content pre {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 0.75rem;
+      border-radius: 0.75rem;
+      font-family: monospace;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin: 0.5rem 0;
+      overflow-x: auto;
+    }
+    .note-content blockquote {
+      border-left: 3px solid #38bdf8;
+      padding-left: 0.75rem;
+      font-style: italic;
+      margin: 0.5rem 0;
+      opacity: 0.9;
+    }
+    :root { --custom-density: 1; }
+    .reduced-motion *, .reduced-motion *::before, .reduced-motion *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+    .text-sky-400, .text-sky-300 { color: var(--site-accent) !important; }
+    .border-sky-400, .border-sky-500 { border-color: color-mix(in srgb, var(--site-accent) 55%, transparent) !important; }
+    .bg-sky-500 { background-color: var(--site-accent) !important; }
+    body { --site-accent: var(--site-accent, #38bdf8); }
+
+    .note-content table { border-collapse: collapse; width: 100%; margin: .6rem 0; font-size: .85em; }
+    .note-content th, .note-content td { border: 1px solid rgba(148,163,184,.35); padding: .35rem .55rem; text-align: left; vertical-align: top; }
+    .note-content th { background: rgba(56,189,248,.14); font-weight: 700; }
+    .note-content hr { border: 0; border-top: 1px solid rgba(148,163,184,.4); margin: .9rem 0; }
+    .note-content a { color: #7dd3fc; text-decoration: underline; }
+    .note-content h1 { font-size: 1.35em; font-weight: 800; margin: .7rem 0 .35rem; }
+    .note-content h2 { font-size: 1.15em; font-weight: 700; margin: .65rem 0 .3rem; }
+    .note-content h3 { font-size: 1.02em; font-weight: 700; margin: .55rem 0 .25rem; }
+    .note-content ul { list-style: disc; padding-left: 1.3rem; } .note-content ol { list-style: decimal; padding-left: 1.3rem; }
+    .note-content code { padding: .1rem .35rem; border-radius: .3rem; background: rgba(15,23,42,.8); border: 1px solid rgba(255,255,255,.1); font-family: 'JetBrains Mono', monospace; font-size: .85em; color: #7dd3fc; }
+    .note-content pre code { display: block; padding: .6rem .8rem; border: 0; background: transparent; }
+    .note-content ul.cd-check { list-style: none; padding-left: .2rem; }
+    .note-content ul.cd-check li { position: relative; padding-left: 1.6rem; margin: .2rem 0; }
+    .note-content ul.cd-check li::before { content: ''; position: absolute; left: 0; top: .2em; width: .95em; height: .95em; border: 1.5px solid #94a3b8; border-radius: .25em; }
+    .note-content ul.cd-check li.done { text-decoration: line-through; opacity: .65; }
+    .note-content ul.cd-check li.done::before { background: #38bdf8; border-color: #38bdf8; }
+    .note-content .cd-callout { border-left: 4px solid #38bdf8; background: rgba(56,189,248,.1); padding: .55rem .8rem; margin: .6rem 0; border-radius: 0 .5rem .5rem 0; }
+    .note-content .cd-tip { border-color: #818cf8; background: rgba(129,140,248,.12); }
+    .note-content .cd-warn { border-color: #fbbf24; background: rgba(251,191,36,.12); }
+    .note-content .cd-ok { border-color: #34d399; background: rgba(52,211,153,.12); }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col font-sans selection:bg-sky-500 selection:text-white">
+
+  <!-- Admin Live Mode Global Bar -->
+  <div id="admin-mode-banner" class="hidden bg-gradient-to-r from-amber-600 via-sky-600 to-indigo-700 text-white text-xs font-mono py-2.5 px-4 text-center sticky top-0 z-50 shadow-2xl flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="w-2.5 h-2.5 rounded-full bg-white animate-ping"></span>
+      <span class="font-bold tracking-wider">👑 ADMINISTRATOR MODE ACTIVE — Global Site Architect</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button type="button" onclick="openAdminDashboard()" class="px-3 py-1 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-200 transition shadow">
+        ⚙️ Creator Console & Site Forge
+      </button>
+      <button type="button" onclick="exitAdminMode()" class="px-2.5 py-1 rounded-xl bg-black/40 text-white font-bold hover:bg-black/60 transition">
+        Exit Admin
+      </button>
+    </div>
+  </div>
+
+  <!-- Announcement Bar -->
+  <aside class="bg-gradient-to-r from-sky-950/60 via-indigo-950/40 to-slate-950/70 border-b border-sky-500/20 text-xs py-2 px-4 text-center font-mono text-sky-300">
+    <span id="global-announcement-text">Cloud Diaries — your personal scrapbook, planner and creative workspace</span>
+  </aside>
+
+  <!-- Sticky Top Header -->
+  <header class="sticky top-0 z-40 bg-[#0b1220]/90 backdrop-blur-xl border-b border-white/10 px-4 lg:px-8 py-3.5">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      
+      <!-- Brand Logo (Triple-click opens admin login gateway) -->
+      <div class="flex items-center gap-3 cursor-pointer select-none" onclick="handleSecretAdminTrigger(event)">
+        <svg class="w-10 h-10 shrink-0" viewBox="0 0 40 40" role="img" aria-label="Cloud Diaries logo"><defs><linearGradient id="cdg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#6366f1"/></linearGradient></defs><rect width="40" height="40" rx="10" fill="url(#cdg1)"/><g fill="#fff"><circle cx="14" cy="24" r="5.5"/><circle cx="20.5" cy="19" r="7.5"/><circle cx="27" cy="23.5" r="5.5"/><rect x="14" y="23" width="13" height="6.5" rx="3.2"/></g><path d="M16 24.5h9M16 27.5h5.5" stroke="#4f6bd8" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <div>
+          <span class="text-xl font-bold tracking-tight text-white font-display">Cloud <span class="text-sky-400">Diaries</span></span>
+          <span class="text-[11px] font-medium tracking-wide text-slate-400 block -mt-0.5">Scrapbook · Planner · Workspace</span>
+        </div>
+      </div>
+
+      <!-- Searchbar -->
+      <div class="flex-1 max-w-xl hidden md:block">
+        <div class="relative flex items-center px-4 py-2 bg-slate-900 border border-white/10 rounded-2xl focus-within:border-sky-400 transition">
+          <i class="ph-bold ph-magnifying-glass text-sky-400 text-base mr-2.5"></i>
+          <input 
+            type="text" 
+            id="search-input" 
+            placeholder="Search notes, tactics, journals... ('/')" 
+            class="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-full font-medium"
+            oninput="handleSearch(this.value)"
+          >
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Invite Friend Button -->
+        <button 
+          type="button" 
+          onclick="openInviteModal()" 
+          title="Invite a Friend"
+          class="p-2.5 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-300 hover:bg-sky-500 hover:text-white transition shadow-sm flex items-center gap-1.5 text-xs font-mono font-bold"
+        >
+          <i class="ph-bold ph-paper-plane-tilt text-base"></i>
+          <span class="hidden sm:inline">Invite</span>
+        </button>
+
+        <!-- Admin Gateway Button -->
+        <button 
+          type="button" 
+          onclick="openAdminGatewayModal()" 
+          title="Creator Admin Access"
+          class="p-2.5 rounded-2xl bg-slate-900 border border-white/10 text-slate-400 hover:text-sky-400 transition text-xs font-mono font-bold"
+        >
+          <i class="ph-bold ph-shield-check text-base"></i>
+        </button>
+
+        <button type="button" onclick="openFeatureStudio()" title="Dashboard, planner, bookmarks and backup" class="px-3 py-2 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-200 hover:bg-indigo-500/20 text-xs font-bold transition">✦ Studio</button>
+        <button type="button" onclick="installSakuraPWA()" id="install-pwa-btn" title="Install Cloud Diaries" class="hidden sm:inline-flex px-3 py-2 rounded-2xl bg-slate-900 border border-white/10 text-slate-300 hover:text-sky-300 text-xs font-bold transition">↧ Install</button>
+        <div id="user-nav-container"></div>
+        
+        <button 
+          type="button" 
+          onclick="openCreateModal()" 
+          class="px-4 py-2 rounded-2xl bg-gradient-to-r from-sky-500 via-rose-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-sky-500/25 transition active:scale-95"
+        >
+          <i class="ph-bold ph-feather text-base"></i>
+          <span>Compose</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Filter Navigation -->
+  <nav class="bg-slate-950/70 border-b border-white/5 px-4 lg:px-8 py-3 select-none">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2 overflow-x-auto text-xs font-semibold" id="filter-pills">
+        <button type="button" onclick="filterType('All')" class="filter-pill active px-4 py-1.5 rounded-xl bg-sky-500 text-white shadow-md shadow-sky-500/30 flex items-center gap-1.5">
+          Public Wall
+        </button>
+        <button type="button" onclick="filterType('note')" class="filter-pill px-4 py-1.5 rounded-xl bg-slate-900 text-slate-300 hover:text-sky-300 border border-white/10 transition flex items-center gap-1.5">
+          📚 Study Notes
+        </button>
+        <button type="button" onclick="filterType('journal')" class="filter-pill px-4 py-1.5 rounded-xl bg-slate-900 text-slate-300 hover:text-sky-300 border border-white/10 transition flex items-center gap-1.5">
+          📖 Reflective Journals
+        </button>
+        <button type="button" onclick="filterType('picture')" class="filter-pill px-4 py-1.5 rounded-xl bg-slate-900 text-slate-300 hover:text-sky-300 border border-white/10 transition flex items-center gap-1.5">
+          🎨 Photos & Art
+        </button>
+        <button type="button" onclick="filterType('my-private')" class="filter-pill px-4 py-1.5 rounded-xl bg-indigo-900/40 text-indigo-300 hover:text-white border border-indigo-500/30 transition flex items-center gap-1.5">
+          🔒 Private Vault
+        </button>
+      </div>
+
+      <div class="hidden md:flex items-center gap-2 text-xs font-mono text-sky-300">
+        <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+        <span id="active-user-badge">Visitor Mode</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Masonry Feed -->
+  <div id="guest-banner" class="hidden bg-sky-500/10 border-b border-sky-500/30 px-4 py-2.5 text-xs text-sky-100">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <span>You are using Cloud Diaries as a guest. <strong id="guest-count">0 entries</strong> saved on this device only.</span>
+      <span class="flex gap-2"><button type="button" onclick="openAuthModal();switchAuthFlow('register')" class="px-3 py-1 rounded-lg bg-sky-500 text-white font-bold">Create free account</button><button type="button" onclick="openAuthModal()" class="px-3 py-1 rounded-lg border border-sky-400/40 text-sky-200">Sign in</button></span>
+    </div>
+  </div>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 space-y-6">
+    <div class="flex items-center justify-between border-b border-white/10 pb-4">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-display font-bold text-white flex items-center gap-2" id="feed-title">
+          Community Wall
+        </h1>
+        <p class="text-xs text-slate-400" id="feed-subtext">Community entries, notes, photos & art shared by creative authors</p>
+      </div>
+
+      <div class="flex items-center gap-2 text-xs font-mono">
+        <span class="text-slate-500">Sort:</span>
+        <button type="button" onclick="sortFeed('latest')" class="px-3 py-1 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/30 hover:bg-sky-500 hover:text-white transition">Latest</button>
+        <button type="button" onclick="sortFeed('popular')" class="px-3 py-1 rounded-lg bg-slate-900 text-slate-400 hover:text-white transition">Most Loved</button>
+      </div>
+    </div>
+
+    <div id="posts-masonry" class="pinterest-grid"></div>
+  </main>
+
+  <!-- MODAL: INVITE A FRIEND -->
+  <div id="invite-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-sky-500/30 w-full max-w-md rounded-3xl shadow-2xl p-6 sm:p-7 space-y-4 text-xs">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-sky-500 text-white flex items-center justify-center text-lg">💌</div>
+          <div>
+            <h3 class="text-base font-bold text-white font-display">Invite a Friend to Cloud Diaries</h3>
+            <p class="text-[11px] text-slate-400">Invite someone to write, plan and save notes together</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeInviteModal()" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center">
+          <i class="ph-bold ph-x"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-slate-300 font-mono mb-1 font-bold">Your Unique Invite Link</label>
+          <div class="flex gap-2">
+            <input type="text" id="invite-link-input" readonly class="flex-1 bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sky-300 font-mono outline-none text-[11px]">
+            <button type="button" onclick="copyInviteLink()" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold transition flex items-center gap-1">
+              <i class="ph-bold ph-copy"></i> Copy
+            </button>
+          </div>
+        </div>
+
+        <button type="button" onclick="shareViaDevice()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold transition flex items-center justify-center gap-1.5">
+          <i class="ph-bold ph-share-network"></i> Share via Apps (WhatsApp / Telegram / Messages)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREATOR ADMIN GATEWAY -->
+  <div id="admin-gateway-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-sky-500/40 w-full max-w-md rounded-3xl shadow-2xl p-6 sm:p-7 space-y-4 text-xs">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-sky-500 text-white flex items-center justify-center text-lg">👑</div>
+          <div>
+            <h3 class="text-base font-bold text-white font-display">Creator Admin Gateway</h3>
+            <p class="text-[11px] text-slate-400">Master Password, Direct Gmail OTP, or Secret Q/A</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeAdminGatewayModal()" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center">
+          <i class="ph-bold ph-x"></i>
+        </button>
+      </div>
+
+      <!-- Option 1: Direct Master Key -->
+      <div class="space-y-2">
+        <label class="block text-slate-300 font-mono font-bold">Creator Master Password</label>
+        <div class="flex gap-2">
+          <input type="password" id="gateway-admin-key" placeholder="Administrator access (server verified)" class="flex-1 bg-slate-950 border border-white/10 rounded-xl px-3.5 py-2 text-white focus:border-sky-400 outline-none">
+          <button type="button" onclick="verifyAdminGatewayPass()" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold transition">
+            Unlock
+          </button>
+        </div>
+      </div>
+
+      <div class="relative flex py-1 items-center">
+        <div class="flex-grow border-t border-white/10"></div>
+        <span class="flex-shrink mx-2 text-slate-500 font-mono text-[10px]">OR RECOVER ACCESS</span>
+        <div class="flex-grow border-t border-white/10"></div>
+      </div>
+
+      <!-- Option 2: Send Real Gmail OTP -->
+      <div class="p-3 bg-slate-950 border border-white/5 rounded-2xl space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-sky-300">📧 Gmail OTP Verification</span>
+          <span class="text-[10px] text-slate-500 font-mono">bakauditya2607@gmail.com</span>
+        </div>
+        <button type="button" id="btn-dispatch-gateway-otp" onclick="dispatchAdminGatewayOTP()" class="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition flex items-center justify-center gap-1.5">
+          <i class="ph-bold ph-paper-plane-tilt"></i> Send 6-Digit OTP to My Gmail
+        </button>
+        <div id="gateway-otp-verify-box" class="hidden flex gap-2 pt-1">
+          <input type="text" id="gateway-otp-input" placeholder="Enter 6-digit OTP..." maxlength="6" class="flex-1 bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-center font-mono text-sky-300 tracking-widest outline-none">
+          <button type="button" onclick="confirmAdminGatewayOTP()" class="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-bold transition">
+            Verify OTP
+          </button>
+        </div>
+      </div>
+
+      <!-- Option 3: Custom Secret Question -->
+      <div class="p-3 bg-slate-950 border border-white/5 rounded-2xl space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-slate-300">❓ Custom Security Question</span>
+          <button type="button" onclick="toggleAdminQuestionBox()" class="text-sky-400 hover:underline font-mono text-[10px]">Show Question</button>
+        </div>
+        <div id="gateway-question-box" class="hidden space-y-2 pt-1">
+          <div class="p-2 bg-slate-900 border border-white/10 rounded-xl text-slate-300 font-medium" id="display-admin-custom-q">
+            What is the secret flower of this sanctuary?
+          </div>
+          <div class="flex gap-2">
+            <input type="text" id="gateway-question-answer" placeholder="Type your secret answer..." class="flex-1 bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-white outline-none">
+            <button type="button" onclick="confirmAdminCustomQuestion()" class="px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold transition">
+              Verify
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: COMPOSE STUDIO -->
+  <div id="create-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden items-center justify-center p-3 sm:p-5">
+    <div class="bg-slate-900 border border-white/10 w-full max-w-6xl rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[94vh]">
+      
+      <!-- Header -->
+      <div class="flex items-center justify-between px-6 py-3 border-b border-white/10 bg-slate-950">
+        <div class="flex items-center gap-2.5">
+          <svg class="w-8 h-8 shrink-0" viewBox="0 0 40 40" role="img" aria-label="Cloud Diaries logo"><defs><linearGradient id="cdg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#6366f1"/></linearGradient></defs><rect width="40" height="40" rx="10" fill="url(#cdg2)"/><g fill="#fff"><circle cx="14" cy="24" r="5.5"/><circle cx="20.5" cy="19" r="7.5"/><circle cx="27" cy="23.5" r="5.5"/><rect x="14" y="23" width="13" height="6.5" rx="3.2"/></g><path d="M16 24.5h9M16 27.5h5.5" stroke="#4f6bd8" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <div>
+            <h3 class="text-base font-display font-bold text-white" id="modal-studio-title">Cloud Diaries Studio</h3>
+            <p class="text-[11px] text-slate-400">Scrapbook canvas, free drag & resize photos, stickers and rich text</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeCreateModal()" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center">
+          <i class="ph-bold ph-x"></i>
+        </button>
+      </div>
+
+      <!-- Split Screen Layout -->
+      <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-white/10 overflow-hidden text-xs">
+        
+        <!-- LEFT: CONTROLS & EDITOR -->
+        <div class="p-5 space-y-4 overflow-y-auto max-h-[calc(94vh-120px)]">
+          
+          <!-- Starter & Custom Admin Templates -->
+          <div class="p-3 rounded-2xl bg-slate-950 border border-sky-500/30 space-y-2">
+            <span class="font-display font-bold text-sky-300 text-xs block">Starter Templates</span>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 max-h-40 overflow-y-auto pr-1" id="dynamic-templates-container"></div>
+          </div>
+
+          <!-- Visibility & Category -->
+          <div class="grid grid-cols-2 gap-2">
+            <div class="p-2.5 rounded-2xl bg-slate-950 border border-white/10 flex items-center justify-between">
+              <span class="font-bold text-white text-[11px]">Visibility</span>
+              <button type="button" onclick="togglePostPrivacy()" id="btn-privacy-toggle" class="px-2.5 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[10px] flex items-center gap-1">
+                <i class="ph-bold ph-globe"></i> <span>Public</span>
+              </button>
+            </div>
+
+            <div class="p-2.5 rounded-2xl bg-slate-950 border border-white/10 flex items-center justify-between">
+              <span class="font-bold text-white text-[11px]">Category</span>
+              <select id="type-select" onchange="selectPostType(this.value)" class="bg-slate-900 border border-white/10 rounded-lg px-2 py-0.5 text-white font-bold outline-none text-[10px]">
+                <option value="note">📚 Study Note</option>
+                <option value="journal">📖 Reflective Journal</option>
+                <option value="picture">🎨 Photos & Art</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Styling: Tape, Theme & Font -->
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block font-mono text-[10px] text-slate-400 mb-1 font-bold">Washi Tape</label>
+              <select id="post-tape-select" onchange="syncLivePreview()" class="w-full bg-slate-950 border border-white/10 rounded-xl px-2 py-1 text-white font-bold outline-none text-[10px]">
+                <option value="none">No Tape</option>
+                <option value="washi-floral">🌸 Floral</option>
+                <option value="washi-grid">📐 Grid</option>
+                <option value="washi-holographic">⚡ Holo</option>
+                <option value="washi-kraft">📜 Kraft</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-mono text-[10px] text-slate-400 mb-1 font-bold">Paper Canvas</label>
+              <select id="post-theme-select" onchange="syncLivePreview()" class="w-full bg-slate-950 border border-white/10 rounded-xl px-2 py-1 text-white font-bold outline-none text-[10px]">
+                <option value="theme-slate">🌌 Dark Slate</option>
+                <option value="theme-sakura">🌸 Rose Blush</option>
+                <option value="theme-parchment">📜 Parchment</option>
+                <option value="theme-matcha">🍵 Matcha</option>
+                <option value="theme-lavender">💜 Lavender</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-mono text-[10px] text-slate-400 mb-1 font-bold">Typography</label>
+              <select id="post-font-select" onchange="syncLivePreview()" class="w-full bg-slate-950 border border-white/10 rounded-xl px-2 py-1 text-white font-bold outline-none text-[10px]">
+                <option value="font-sans">Modern Sans</option>
+                <option value="font-handwritten">Handwritten</option>
+                <option value="font-cute">Cute Rounded</option>
+                <option value="font-serif">Literary Serif</option>
+                <option value="font-mono">Monospace</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Title Input -->
+          <div>
+            <label class="block font-bold text-slate-300 mb-1">Entry Title *</label>
+            <div id="guest-note" class="hidden mb-2 rounded-xl border border-sky-500/30 bg-sky-500/10 p-2.5 text-[11px] text-sky-100">Guest mode: this entry is saved on this device only. Create a free account to publish, sync and keep it safe.</div>
+            <input type="text" id="post-title" oninput="syncLivePreview()" placeholder="Enter entry title..." class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-white focus:border-sky-400 outline-none text-xs font-bold">
+          </div>
+
+          <!-- Photos Placement with Drag & Resize Parameters -->
+          <div class="space-y-2 p-3.5 rounded-2xl bg-slate-950 border border-white/10">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="block font-bold text-sky-300 text-[11px]">🎨 Freely Draggable & Resizable Scrapbook Photos</span>
+                <span class="text-[10px] text-slate-400 font-mono">Upload pictures, drag on the preview card, or adjust size slider</span>
+              </div>
+              <label class="px-2.5 py-1 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/30 cursor-pointer hover:bg-sky-500 hover:text-white transition font-mono text-[10px] font-bold flex items-center gap-1">
+                <i class="ph-bold ph-plus"></i> Upload Photo
+                <input type="file" accept="image/*" class="hidden" onchange="handleMultipleImageUpload(event)">
+              </label>
+            </div>
+            <div id="image-attachments-list" class="space-y-2 pt-1"></div>
+          </div>
+
+          <!-- RICH TEXT TOOLBAR -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="block font-bold text-slate-300">Writing Canvas & Pro Text Tools</label>
+              <span class="text-[10px] font-mono text-sky-300">Select text to style!</span>
+            </div>
+            
+            <div class="flex items-center gap-1 flex-wrap p-2 rounded-xl bg-slate-950 border border-white/10 select-none">
+              <button type="button" onclick="applyCustomSpan('rainbow-text')" class="px-2 py-0.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40 font-bold text-[10px]">🌈 Rainbow</button>
+              
+              <button type="button" onclick="applyCustomSpan('hl-pink')" title="Pink Highlight" class="w-5 h-5 rounded bg-sky-400/40 border border-sky-400 text-sky-300 text-[9px] font-bold">🖍️</button>
+              <button type="button" onclick="applyCustomSpan('hl-yellow')" title="Yellow Highlight" class="w-5 h-5 rounded bg-yellow-400/40 border border-yellow-400 text-yellow-300 text-[9px] font-bold">🖍️</button>
+              <button type="button" onclick="applyCustomSpan('hl-cyan')" title="Cyan Highlight" class="w-5 h-5 rounded bg-sky-400/40 border border-sky-400 text-sky-300 text-[9px] font-bold">🖍️</button>
+              <button type="button" onclick="applyCustomSpan('hl-green')" title="Green Highlight" class="w-5 h-5 rounded bg-emerald-400/40 border border-emerald-400 text-emerald-300 text-[9px] font-bold">🖍️</button>
+              <button type="button" onclick="applyCustomSpan('hl-purple')" title="Purple Highlight" class="w-5 h-5 rounded bg-indigo-400/40 border border-indigo-400 text-indigo-300 text-[9px] font-bold">🖍️</button>
+              <button type="button" onclick="applyCustomSpan('hl-orange')" title="Orange Highlight" class="w-5 h-5 rounded bg-orange-400/40 border border-orange-400 text-orange-300 text-[9px] font-bold">🖍️</button>
+
+              <span class="w-px h-4 bg-white/10 mx-1"></span>
+
+              <button type="button" onclick="executeStyle('bold')" title="Bold" class="w-6 h-6 rounded hover:bg-slate-800 text-slate-300 font-bold"><i class="ph-bold ph-text-b"></i></button>
+              <button type="button" onclick="executeStyle('italic')" title="Italic" class="w-6 h-6 rounded hover:bg-slate-800 text-slate-300"><i class="ph-bold ph-text-italic"></i></button>
+              <button type="button" onclick="executeStyle('underline')" title="Underline" class="w-6 h-6 rounded hover:bg-slate-800 text-slate-300"><i class="ph-bold ph-text-underline"></i></button>
+              <button type="button" onclick="executeStyle('strikeThrough')" title="Strikethrough" class="w-6 h-6 rounded hover:bg-slate-800 text-slate-300"><i class="ph-bold ph-text-strikethrough"></i></button>
+              
+              <span class="w-px h-4 bg-white/10 mx-1"></span>
+
+              <button type="button" onclick="executeHeading('h1')" class="px-1.5 h-6 rounded hover:bg-slate-800 font-bold text-xs text-sky-400">H1</button>
+              <button type="button" onclick="executeHeading('h2')" class="px-1.5 h-6 rounded hover:bg-slate-800 font-bold text-xs text-rose-300">H2</button>
+              <button type="button" onclick="executeHeading('blockquote')" title="Quote" class="w-6 h-6 rounded hover:bg-slate-800 text-slate-300"><i class="ph-bold ph-quotes"></i></button>
+              <button type="button" onclick="executeStyle('insertUnorderedList')" title="Bullet List" class="w-6 h-6 rounded hover:bg-slate-800 text-slate-300"><i class="ph-bold ph-list-bullets"></i></button>
+              <button type="button" onclick="executeStyle('insertOrderedList')" title="Number List" class="w-6 h-6 rounded hover:bg-slate-800 text-slate-300"><i class="ph-bold ph-list-numbers"></i></button>
+              
+              <button type="button" onclick="applyInlineCode()" title="Inline Code" class="w-6 h-6 rounded hover:bg-slate-800 text-sky-400"><i class="ph-bold ph-code"></i></button>
+              <button type="button" onclick="executeStyle('removeFormat')" title="Clear Format" class="w-6 h-6 rounded hover:bg-slate-800 text-rose-400"><i class="ph-bold ph-eraser"></i></button>
+
+              <span class="w-px h-4 bg-white/10 mx-1"></span>
+
+              <label title="Font Color" class="flex items-center gap-1 cursor-pointer px-1">
+                <i class="ph-bold ph-paint-brush-broad text-slate-300"></i>
+                <input type="color" onchange="executeStyle('foreColor', this.value)" class="w-4 h-4 bg-transparent border-0 cursor-pointer rounded">
+              </label>
+            </div>
+            <div class="flex flex-wrap items-center gap-1 px-2 py-1.5 border-t border-white/10">
+<button type="button" onmousedown="event.preventDefault()" onclick="executeStyle('undo')" title="Undo" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold "><i class="ph-bold ph-arrow-counter-clockwise"></i></button>
+<button type="button" onmousedown="event.preventDefault()" onclick="executeStyle('redo')" title="Redo" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold "><i class="ph-bold ph-arrow-clockwise"></i></button>
+<span class="w-px h-4 bg-white/10 mx-1"></span>
+<button type="button" onmousedown="event.preventDefault()" onclick="executeStyle('justifyLeft')" title="Align left" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold "><i class="ph-bold ph-text-align-left"></i></button>
+<button type="button" onmousedown="event.preventDefault()" onclick="executeStyle('justifyCenter')" title="Align center" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold "><i class="ph-bold ph-text-align-center"></i></button>
+<button type="button" onmousedown="event.preventDefault()" onclick="executeStyle('justifyRight')" title="Align right" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold "><i class="ph-bold ph-text-align-right"></i></button>
+<button type="button" onmousedown="event.preventDefault()" onclick="executeStyle('justifyFull')" title="Justify" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold "><i class="ph-bold ph-text-align-justify"></i></button>
+<button type="button" onmousedown="event.preventDefault()" onclick="executeStyle('outdent')" title="Decrease indent" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold "><i class="ph-bold ph-text-outdent"></i></button>
+<button type="button" onmousedown="event.preventDefault()" onclick="executeStyle('indent')" title="Increase indent" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold "><i class="ph-bold ph-text-indent"></i></button>
+<span class="w-px h-4 bg-white/10 mx-1"></span>
+<select onchange="setFontSize(this.value);this.value=''" title="Text size" aria-label="Text size" class="h-6 rounded bg-slate-900 border border-white/10 text-[11px] text-slate-300"><option value="">Size</option><option value="2">Small</option><option value="3">Normal</option><option value="5">Large</option><option value="6">Extra large</option></select>
+<button type="button" onmousedown="event.preventDefault()" onclick="insertLink()" title="Insert link" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold "><i class="ph-bold ph-link"></i></button>
+<button type="button" onmousedown="event.preventDefault()" onclick="insertTable()" title="Insert table" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold "><i class="ph-bold ph-table"></i></button>
+<button type="button" onmousedown="event.preventDefault()" onclick="insertChecklist()" title="Checklist" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold "><i class="ph-bold ph-list-checks"></i></button>
+<button type="button" onmousedown="event.preventDefault()" onclick="insertDivider()" title="Divider line" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold "><i class="ph-bold ph-minus"></i></button>
+<button type="button" onmousedown="event.preventDefault()" onclick="insertCodeBlock()" title="Code block" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold "><i class="ph-bold ph-brackets-curly"></i></button>
+<button type="button" onmousedown="event.preventDefault()" onclick="executeStyle('subscript')" title="Subscript" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold ">x<sub>2</sub></button>
+<button type="button" onmousedown="event.preventDefault()" onclick="executeStyle('superscript')" title="Superscript" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold ">x<sup>2</sup></button>
+<span class="w-px h-4 bg-white/10 mx-1"></span>
+<button type="button" onmousedown="event.preventDefault()" onclick="insertCallout('info')" title="Note box" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold text-sky-300">Note</button>
+<button type="button" onmousedown="event.preventDefault()" onclick="insertCallout('tip')" title="Tip box" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold text-indigo-300">Tip</button>
+<button type="button" onmousedown="event.preventDefault()" onclick="insertCallout('warn')" title="Warning box" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold text-amber-300">Warning</button>
+<button type="button" onmousedown="event.preventDefault()" onclick="insertCallout('ok')" title="Done box" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold text-emerald-300">Done</button>
+<span class="w-px h-4 bg-white/10 mx-1"></span>
+<button type="button" onmousedown="event.preventDefault()" onclick="exportEntryHtml()" title="Download as HTML" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold "><i class="ph-bold ph-download-simple"></i> HTML</button>
+<button type="button" onmousedown="event.preventDefault()" onclick="printEntry()" title="Print or save as PDF" class="px-1.5 h-6 rounded hover:bg-slate-800 text-slate-300 text-[11px] font-semibold "><i class="ph-bold ph-printer"></i> PDF</button>
+<span id="word-count" class="ml-auto text-[10px] text-slate-500 pr-1">0 words</span>
+</div>
+
+            <div 
+              id="post-editor" 
+              contenteditable="true" 
+              oninput="syncLivePreview();updateWordCount()"
+              class="p-4 rounded-2xl bg-slate-950 border border-white/10 focus:border-sky-400 outline-none leading-relaxed min-h-[240px] max-h-[460px] overflow-y-auto note-content"
+            ></div>
+          </div>
+
+          <!-- Stickers Selection -->
+          <div class="space-y-1.5 p-3 rounded-2xl bg-slate-950 border border-white/10">
+            <span class="block font-bold text-sky-300 text-[11px]">🎀 Tap Sticker to Place (Drag anywhere on canvas)</span>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button type="button" onclick="spawnCanvasSticker('🎀')" class="text-lg p-1 rounded-xl bg-slate-900 border border-white/10 hover:scale-125 transition">🎀</button>
+              <button type="button" onclick="spawnCanvasSticker('🧸')" class="text-lg p-1 rounded-xl bg-slate-900 border border-white/10 hover:scale-125 transition">🧸</button>
+              <button type="button" onclick="spawnCanvasSticker('🌸')" class="text-lg p-1 rounded-xl bg-slate-900 border border-white/10 hover:scale-125 transition">🌸</button>
+              <button type="button" onclick="spawnCanvasSticker('💖')" class="text-lg p-1 rounded-xl bg-slate-900 border border-white/10 hover:scale-125 transition">💖</button>
+              <button type="button" onclick="spawnCanvasSticker('✨')" class="text-lg p-1 rounded-xl bg-slate-900 border border-white/10 hover:scale-125 transition">✨</button>
+              <button type="button" onclick="spawnCanvasSticker('📌')" class="text-lg p-1 rounded-xl bg-slate-900 border border-white/10 hover:scale-125 transition">📌</button>
+              <button type="button" onclick="spawnCanvasSticker('☕')" class="text-lg p-1 rounded-xl bg-slate-900 border border-white/10 hover:scale-125 transition">☕</button>
+              <button type="button" onclick="spawnCanvasSticker('🌙')" class="text-lg p-1 rounded-xl bg-slate-900 border border-white/10 hover:scale-125 transition">🌙</button>
+              <button type="button" onclick="spawnCanvasSticker('⭐')" class="text-lg p-1 rounded-xl bg-slate-900 border border-white/10 hover:scale-125 transition">⭐</button>
+              <button type="button" onclick="spawnCanvasSticker('🍓')" class="text-lg p-1 rounded-xl bg-slate-900 border border-white/10 hover:scale-125 transition">🍓</button>
+              <button type="button" onclick="spawnCanvasSticker('🍡')" class="text-lg p-1 rounded-xl bg-slate-900 border border-white/10 hover:scale-125 transition">🍡</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-300 mb-1">Tags (Comma-separated)</label>
+            <input type="text" id="post-tags" oninput="syncLivePreview()" placeholder="e.g. Study, Mastermind, Tactics, Diary" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-1.5 text-white focus:border-sky-400 outline-none">
+          </div>
+        </div>
+
+        <!-- RIGHT: LIVE PREVIEW & DRAG STAGE -->
+        <div class="p-5 flex flex-col items-center justify-start overflow-y-auto bg-black/40 max-h-[calc(94vh-120px)] space-y-3">
+          <div class="w-full flex items-center justify-between text-xs font-mono text-slate-400 px-2">
+            <span>👁️ Interactive Canvas Preview</span>
+            <span class="text-sky-300">Drag photos & stickers anywhere</span>
+          </div>
+
+          <div id="live-preview-card" class="w-full max-w-md relative border rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 theme-slate font-sans min-h-[380px] flex flex-col">
+            <div id="preview-tape-container"></div>
+            
+            <!-- Draggable Interactive Layer -->
+            <div id="preview-interactive-layer" class="absolute inset-0 pointer-events-auto overflow-hidden z-20"></div>
+
+            <div class="p-5 space-y-2.5 relative z-10">
+              <div class="flex items-center justify-between text-[11px] font-mono">
+                <span class="px-2 py-0.5 rounded-full bg-white/10 uppercase font-bold text-sky-300" id="preview-type-badge">NOTE</span>
+                <span class="opacity-60" id="preview-privacy-badge">🌐 Public</span>
+              </div>
+              <h2 class="text-base font-bold leading-snug" id="preview-title-display">Untitled Diary Entry</h2>
+              <div class="text-xs opacity-90 leading-relaxed note-content" id="preview-body-display">Start writing on the left to format live...</div>
+              <div class="flex items-center gap-1 flex-wrap pt-1" id="preview-tags-display"></div>
+            </div>
+
+            <div class="p-4 bg-black/25 border-t border-white/5 flex items-center justify-between text-xs opacity-80 relative z-10 mt-auto">
+              <span class="font-mono text-[11px]" id="preview-author-display">Author: You</span>
+              <span class="text-sky-400 font-bold">Scrapbook Card</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Studio Footer -->
+      <div class="p-3.5 px-6 border-t border-white/10 bg-slate-950 flex items-center justify-between">
+        <span class="text-[11px] font-mono text-slate-400">Positioning & canvas persistent</span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeCreateModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold">Cancel</button>
+          <button type="button" onclick="submitPinPost()" class="px-5 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold transition flex items-center gap-1.5 shadow-lg shadow-sky-500/30">
+            <span>Save & Pin to Board</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullview Modal -->
+  <div id="fullview-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-white/10 w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950">
+        <div class="flex items-center gap-3">
+          <img id="fullview-author-avatar" class="w-9 h-9 rounded-2xl object-cover border border-white/20 bg-slate-800">
+          <div>
+            <h3 class="text-base font-bold text-white font-display" id="fullview-title">Full Entry</h3>
+            <span class="text-[11px] font-mono text-slate-400" id="fullview-author-meta">By Author</span>
+          </div>
+        </div>
+        <button type="button" onclick="closeFullViewModal()" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center">
+          <i class="ph-bold ph-x"></i>
+        </button>
+      </div>
+
+      <div class="p-6 sm:p-8 space-y-6 overflow-y-auto flex-1 text-xs" id="fullview-body-wrapper">
+        <div id="fullview-tape" class="w-full flex justify-center -mt-2 mb-2"></div>
+        
+        <div id="fullview-card-stage" class="relative rounded-3xl p-6 min-h-[300px] overflow-hidden border border-white/10">
+          <div id="fullview-canvas-items" class="absolute inset-0 pointer-events-none overflow-hidden z-20"></div>
+          <div class="relative z-10 space-y-4">
+            <div class="flex items-center justify-between text-xs font-mono text-slate-400 border-b border-white/5 pb-2">
+              <span id="fullview-type" class="uppercase font-bold text-sky-300">NOTE</span>
+              <span id="fullview-date">Timestamp</span>
+            </div>
+            <div id="fullview-content" class="text-sm leading-relaxed note-content"></div>
+          </div>
+        </div>
+
+        <div class="pt-6 border-t border-white/10 space-y-3">
+          <h4 class="font-display font-bold text-white text-sm flex items-center gap-1.5">
+            <i class="ph-bold ph-chat-circle-dots text-sky-400"></i> Reader Comments
+          </h4>
+          <div id="fullview-comments-list" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+          
+          <div class="flex gap-2 pt-2">
+            <input type="text" id="fullview-comment-input" placeholder="Leave a comment..." class="flex-1 bg-slate-950 border border-white/10 rounded-xl px-3.5 py-2 text-white outline-none focus:border-sky-400 text-xs">
+            <button type="button" onclick="postFullViewComment()" class="px-5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold transition">
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Account Modal -->
+  <div id="auth-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-white/10 w-full max-w-md rounded-3xl shadow-2xl p-6 sm:p-7 space-y-4 text-xs max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <h3 class="text-base font-bold text-white font-display" id="auth-modal-title">Sign In to Cloud Diaries</h3>
+        <button type="button" onclick="closeAuthModal()" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center">
+          <i class="ph-bold ph-x"></i>
+        </button>
+      </div>
+
+      <div class="rounded-2xl border border-sky-500/30 bg-sky-500/10 p-3 space-y-2">
+        <p class="font-bold text-sky-200">Just looking around?</p>
+        <p class="text-slate-300">Try the editor as a guest, with no account. Entries stay on this device. Create an account later and they move with you.</p>
+        <button type="button" onclick="startGuest()" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/10 text-white font-bold">Continue as guest</button>
+      </div>
+
+      <div id="auth-login-flow" class="space-y-3">
+        <div>
+          <label class="block text-slate-300 font-mono mb-1 font-bold">Email address</label>
+          <input type="email" id="login-email" autocomplete="email" placeholder="you@example.com" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3.5 py-2 text-white focus:border-sky-400 outline-none font-bold">
+        </div>
+        <div>
+          <label class="block text-slate-300 font-mono mb-1 font-bold">Password</label>
+          <input type="password" id="login-password" placeholder="••••••••" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3.5 py-2 text-white focus:border-sky-400 outline-none">
+        </div>
+        <div class="flex items-center justify-between pt-1 font-mono text-[11px]">
+          <button type="button" onclick="switchAuthFlow('forgot')" class="text-sky-400 hover:underline">Forgot password?</button>
+          <button type="button" onclick="switchAuthFlow('register')" class="text-indigo-400 hover:underline">Create an account</button>
+        </div>
+        <button type="button" onclick="handleLoginSubmit()" class="w-full py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold transition mt-2">
+          Sign In
+        </button>
+      </div>
+
+      <div id="auth-register-flow" class="space-y-3 hidden">
+        <div>
+          <label class="block text-slate-300 font-mono mb-1 font-bold">Username *</label>
+          <input type="text" id="reg-username" placeholder="e.g. MastermindStrategist" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3.5 py-2 text-white focus:border-sky-400 outline-none font-bold">
+        </div>
+        <div>
+          <label class="block text-slate-300 font-mono mb-1 font-bold">Email address *</label>
+          <input type="email" id="reg-email" autocomplete="email" placeholder="you@example.com" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3.5 py-2 text-white focus:border-sky-400 outline-none">
+        </div>
+        <div>
+          <label class="block text-slate-300 font-mono mb-1 font-bold">Password (at least 8 characters) *</label>
+          <input type="password" id="reg-password" autocomplete="new-password" placeholder="••••••••" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3.5 py-2 text-white focus:border-sky-400 outline-none">
+        </div>
+        <div class="space-y-2 p-3 rounded-2xl bg-slate-950 border border-sky-500/20">
+          <div class="flex items-center justify-between">
+            <label class="block text-sky-300 font-mono font-bold text-[11px]">Choose Tactical Anime Avatar</label>
+            <span class="text-[9px] text-slate-500 font-mono">Anime Style PFPs</span>
+          </div>
+          <div class="grid grid-cols-4 gap-2" id="tactical-avatars-grid"></div>
+          <div class="pt-2 border-t border-white/5 flex items-center gap-2">
+            <span class="text-slate-400 font-mono text-[10px]">Or upload own:</span>
+            <input type="file" id="reg-custom-avatar-file" accept="image/*" class="text-[10px] text-slate-400" onchange="handleCustomAvatarUpload(event)">
+          </div>
+        </div>
+        <div class="flex items-center justify-between pt-1 font-mono text-[11px]">
+          <button type="button" onclick="switchAuthFlow('login')" class="text-slate-400 hover:underline">Already have an ID? Login</button>
+        </div>
+        <button type="button" onclick="handleRegisterSubmit()" class="w-full py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold transition">
+          Create Account
+        </button>
+      </div>
+
+      <div id="auth-forgot-flow" class="space-y-3 hidden">
+        <p class="text-slate-400">Firebase will send a password-reset link to your email address. No security questions or answers are stored.</p>
+        <div>
+          <label class="block text-slate-300 font-mono mb-1 font-bold">Account email</label>
+          <input type="email" id="reset-email" autocomplete="email" placeholder="you@example.com" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3.5 py-2 text-white focus:border-sky-400 outline-none">
+        </div>
+        <button id="btn-recovery-action" type="button" onclick="sendPasswordReset()" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition">Send Reset Link</button>
+        <button type="button" onclick="switchAuthFlow('login')" class="text-sky-300 hover:underline">Back to sign in</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATOR ADMIN SANCTUARY & SITE FORGE MODAL -->
+  <div id="admin-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-sky-500/30 w-full max-w-3xl rounded-3xl shadow-2xl p-6 sm:p-7 space-y-6 text-xs max-h-[92vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-white/10 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-2xl bg-sky-500 text-white flex items-center justify-center text-lg font-bold">👑</div>
+          <div>
+            <h3 class="text-base font-bold text-white font-display">Admin Console</h3>
+            <p class="text-[11px] text-slate-400">Add templates, customize announcements, moderate wall & security</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeAdminModal()" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center">
+          <i class="ph-bold ph-x"></i>
+        </button>
+      </div>
+
+      <!-- FEATURE 1: SITE FORGE — DYNAMIC TEMPLATE CREATOR -->
+      <div class="p-4 rounded-2xl bg-slate-950 border border-sky-500/40 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-sky-300 text-xs flex items-center gap-1.5 font-display">
+            <i class="ph-bold ph-sparkle"></i> Add New Starter Template to Compose Studio
+          </span>
+          <span class="text-[10px] text-slate-500 font-mono">Builds instant presets for all users</span>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div>
+            <label class="block text-slate-400 font-mono text-[10px]">Button Label & Icon</label>
+            <input type="text" id="admin-tpl-name" placeholder="e.g. 🍵 Tea & Chill" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-slate-400 font-mono text-[10px]">Default Title</label>
+            <input type="text" id="admin-tpl-title" placeholder="e.g. Tea Session Insights:" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-slate-400 font-mono text-[10px]">Tags</label>
+            <input type="text" id="admin-tpl-tags" placeholder="e.g. Tea, Zen, Notes" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-white outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-slate-400 font-mono text-[10px]">Canvas Theme</label>
+            <select id="admin-tpl-theme" class="w-full bg-slate-900 border border-white/10 rounded-xl px-2 py-1.5 text-white outline-none">
+              <option value="theme-slate">Dark Slate</option>
+              <option value="theme-sakura">Rose Blush</option>
+              <option value="theme-parchment">Parchment</option>
+              <option value="theme-matcha">Matcha</option>
+              <option value="theme-lavender">Lavender</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 font-mono text-[10px]">Typography</label>
+            <select id="admin-tpl-font" class="w-full bg-slate-900 border border-white/10 rounded-xl px-2 py-1.5 text-white outline-none">
+              <option value="font-sans">Modern Sans</option>
+              <option value="font-handwritten">Handwritten</option>
+              <option value="font-cute">Cute Rounded</option>
+              <option value="font-serif">Literary Serif</option>
+              <option value="font-mono">Monospace</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 font-mono text-[10px]">Washi Tape</label>
+            <select id="admin-tpl-tape" class="w-full bg-slate-900 border border-white/10 rounded-xl px-2 py-1.5 text-white outline-none">
+              <option value="none">No Tape</option>
+              <option value="washi-floral">Floral</option>
+              <option value="washi-grid">Grid</option>
+              <option value="washi-holographic">Holo</option>
+              <option value="washi-kraft">Kraft</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-mono text-[10px]">Starter HTML Content</label>
+          <textarea id="admin-tpl-content" rows="2" placeholder='<h2>✨ Highlights</h2><p>Document your ideas here...</p>' class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-white outline-none font-mono text-[11px]"></textarea>
+        </div>
+
+        <button type="button" onclick="adminAddNewTemplate()" class="w-full py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold transition flex items-center justify-center gap-1.5">
+          <i class="ph-bold ph-plus-circle"></i> Deploy New Template to Live Studio
+        </button>
+
+        <div id="admin-custom-templates-list" class="pt-2 space-y-1"></div>
+      </div>
+
+      <!-- FEATURE 2: GLOBAL SITE ANNOUNCEMENT CONTROLLER -->
+      <div class="p-3.5 rounded-2xl bg-slate-950 border border-white/10 space-y-2">
+        <span class="font-bold text-sky-300 text-xs flex items-center gap-1.5 font-display">
+          <i class="ph-bold ph-megaphone"></i> Live Site Announcement Bar
+        </span>
+        <div class="flex gap-2">
+          <input type="text" id="admin-announcement-input" placeholder="Type new banner announcement message..." class="flex-1 bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-white outline-none">
+          <button type="button" onclick="adminUpdateAnnouncement()" class="px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition">
+            Update Banner
+          </button>
+        </div>
+      </div>
+
+      <!-- FEATURE 3: SECURITY CREDENTIALS -->
+      <div class="p-3.5 rounded-2xl bg-slate-950 border border-sky-500/40 space-y-2.5">
+        <span class="font-bold text-sky-300 text-xs flex items-center gap-1.5 font-display">
+          <i class="ph-bold ph-key"></i> Creator Master Credentials
+        </span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-400 font-mono text-[10px]">Change Master Key</label>
+            <input type="password" id="admin-new-master-pass" placeholder="Disabled — use server-side admin claims" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-slate-400 font-mono text-[10px]">Custom Recovery Question</label>
+            <input type="text" id="admin-new-sec-q" placeholder="Type custom question..." class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-white outline-none">
+          </div>
+        </div>
+        <div>
+          <label class="block text-slate-400 font-mono text-[10px]">Secret Answer</label>
+          <input type="text" id="admin-new-sec-a" placeholder="Disabled — no client-side recovery answers" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-white outline-none">
+        </div>
+        <button type="button" onclick="saveAdminCredentialsConfig()" class="w-full py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold transition">
+          Update Creator Security
+        </button>
+      </div>
+
+      <!-- METRICS -->
+      <div class="grid grid-cols-3 gap-3 text-center">
+        <div class="p-3 bg-slate-950 border border-white/5 rounded-2xl">
+          <span class="text-slate-400 block text-[10px] font-mono">TOTAL AUTHORS</span>
+          <span class="text-xl font-bold text-sky-300" id="admin-metric-users">0</span>
+        </div>
+        <div class="p-3 bg-slate-950 border border-white/5 rounded-2xl">
+          <span class="text-slate-400 block text-[10px] font-mono">PUBLIC PINS</span>
+          <span class="text-xl font-bold text-emerald-400" id="admin-metric-public">0</span>
+        </div>
+        <div class="p-3 bg-slate-950 border border-white/5 rounded-2xl">
+          <span class="text-slate-400 block text-[10px] font-mono">VAULTED ENTRIES</span>
+          <span class="text-xl font-bold text-indigo-400" id="admin-metric-vaults">0</span>
+        </div>
+      </div>
+
+      <!-- REGISTERED AUTHORS & MODERATION -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="font-display font-bold text-white text-xs">Registered Community Authors</span>
+          <span class="text-[10px] font-mono text-indigo-300">🔒 Vault Privacy Active</span>
+        </div>
+        <div id="admin-users-list" class="space-y-2"></div>
+      </div>
+
+      <div class="pt-3 border-t border-white/10 flex justify-end">
+        <button type="button" onclick="closeAdminModal()" class="px-5 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700">
+          Close Admin Console
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURE STUDIO: local productivity tools + authenticated collaboration -->
+  <div id="feature-studio-modal" class="fixed inset-0 z-[60] bg-black/85 backdrop-blur-md hidden items-center justify-center p-3 sm:p-5">
+    <div class="bg-slate-950 border border-sky-500/30 w-full max-w-5xl max-h-[94vh] overflow-y-auto rounded-3xl shadow-2xl p-5 sm:p-7 space-y-5">
+      <div class="flex items-center justify-between border-b border-white/10 pb-4"><div><h2 class="text-xl font-bold font-display text-white">✦ Cloud Diaries Studio</h2><p class="text-xs text-slate-400 mt-1">Your dashboard, rituals, saved entries, shared rooms and backups</p></div><button onclick="closeFeatureStudio()" class="w-9 h-9 rounded-xl bg-slate-800 text-white">✕</button></div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <section class="rounded-2xl border border-sky-500/20 bg-slate-900/80 p-4 space-y-3"><h3 class="font-bold text-sky-300">Personal dashboard</h3><div class="grid grid-cols-3 gap-2"><div class="rounded-xl bg-black/30 p-3"><div id="dash-post-count" class="text-xl font-bold text-white">0</div><div class="text-[10px] text-slate-400">My entries</div></div><div class="rounded-xl bg-black/30 p-3"><div id="dash-bookmark-count" class="text-xl font-bold text-white">0</div><div class="text-[10px] text-slate-400">Bookmarks</div></div><div class="rounded-xl bg-black/30 p-3"><div id="dash-habit-count" class="text-xl font-bold text-white">0</div><div class="text-[10px] text-slate-400">Habits today</div></div></div><p id="dash-summary" class="text-xs text-slate-300">Sign in to sync your scrapbook. Planner and bookmarks are stored in this browser until a backend is configured.</p><button onclick="filterType('my-private');closeFeatureStudio()" class="px-3 py-2 rounded-xl bg-sky-500/15 border border-sky-500/20 text-sky-200 text-xs font-bold">Open my private vault</button></section>
+        <section class="rounded-2xl border border-indigo-500/20 bg-slate-900/80 p-4 space-y-3"><h3 class="font-bold text-indigo-300">🗓 Planner & habit tracker</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-2"><input id="planner-task-input" maxlength="180" placeholder="Add a task or intention…" class="bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-white text-xs"><input id="planner-task-date" type="date" class="bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-white text-xs"></div><button onclick="addPlannerTask()" class="px-3 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">+ Add task</button><div id="planner-task-list" class="space-y-2 max-h-36 overflow-y-auto"></div><div class="border-t border-white/10 pt-3 flex gap-2"><input id="habit-name-input" maxlength="80" placeholder="Habit (e.g. read 20 min)" class="min-w-0 flex-1 bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-white text-xs"><button onclick="addHabit()" class="px-3 py-2 rounded-xl bg-sky-500 text-white text-xs font-bold">Add habit</button></div><div id="habit-list" class="space-y-2 max-h-36 overflow-y-auto"></div></section>
+        <section class="rounded-2xl border border-emerald-500/20 bg-slate-900/80 p-4 space-y-3"><h3 class="font-bold text-emerald-300">🔖 Bookmarks & collections</h3><p class="text-[11px] text-slate-400">Save entries from their card actions or add a collection name below.</p><div class="flex gap-2"><input id="collection-name-input" maxlength="60" placeholder="New collection name" class="min-w-0 flex-1 bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-white text-xs"><button onclick="addCollection()" class="px-3 py-2 rounded-xl bg-emerald-700 text-white text-xs font-bold">Create</button></div><div id="collection-list" class="flex flex-wrap gap-2"></div><div id="bookmark-list" class="space-y-2 max-h-36 overflow-y-auto"></div></section>
+        <section class="rounded-2xl border border-blue-500/20 bg-slate-900/80 p-4 space-y-3"><h3 class="font-bold text-blue-300">🤝 Collaborative scrapbook</h3><p class="text-[11px] text-slate-400">Room collaboration uses authenticated Firebase Realtime Database rules. It will not sync until Firebase Auth, the rules, and the migration checklist are configured.</p><div class="flex flex-col sm:flex-row gap-2"><input id="collab-room-name" maxlength="80" placeholder="New shared scrapbook name" class="min-w-0 flex-1 bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-white text-xs"><button onclick="createCollabRoom()" class="px-3 py-2 rounded-xl bg-blue-700 text-white text-xs font-bold">Create room</button></div><div class="flex gap-2"><input id="collab-room-code" maxlength="80" placeholder="Room ID to join" class="min-w-0 flex-1 bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-white text-xs"><button onclick="joinCollabRoom()" class="px-3 py-2 rounded-xl bg-slate-700 text-white text-xs font-bold">Join</button></div><div id="collab-status" class="text-xs text-slate-300">No active room.</div><textarea id="collab-room-content" rows="4" maxlength="12000" placeholder="Shared notes and ideas…" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-white text-xs" oninput="scheduleCollabSave()" disabled></textarea><button onclick="copyCollabRoomId()" class="px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs">Copy room ID</button></section>
+        <section class="rounded-2xl border border-amber-500/20 bg-slate-900/80 p-4 space-y-3"><h3 class="font-bold text-amber-300">🎨 Advanced customization</h3><div class="grid grid-cols-1 sm:grid-cols-3 gap-3"><label class="text-[11px] text-slate-300">Accent colour<select id="custom-accent" onchange="saveCustomization()" class="mt-1 w-full bg-slate-950 border border-white/10 rounded-xl px-2 py-2 text-white"><option value="#38bdf8">Rose pink</option><option value="#a78bfa">Lavender</option><option value="#34d399">Matcha</option><option value="#60a5fa">Sky blue</option><option value="#f59e0b">Amber</option></select></label><label class="text-[11px] text-slate-300">Interface density<select id="custom-density" onchange="saveCustomization()" class="mt-1 w-full bg-slate-950 border border-white/10 rounded-xl px-2 py-2 text-white"><option value="comfortable">Comfortable</option><option value="compact">Compact</option></select></label><label class="text-[11px] text-slate-300">Motion<select id="custom-motion" onchange="saveCustomization()" class="mt-1 w-full bg-slate-950 border border-white/10 rounded-xl px-2 py-2 text-white"><option value="normal">Normal</option><option value="reduced">Reduced</option></select></label></div><p class="text-[10px] text-slate-500">Preferences currently apply to this browser. Account-wide syncing requires the configured profile backend.</p></section>
+        <section class="rounded-2xl border border-rose-500/20 bg-slate-900/80 p-4 space-y-3"><h3 class="font-bold text-rose-300">📦 Export & backup</h3><p class="text-[11px] text-slate-400">Export a JSON backup of your entries and local planner/bookmark settings. Keep backups somewhere private.</p><div class="flex flex-wrap gap-2"><button onclick="exportSakuraBackup()" class="px-3 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold">Export backup JSON</button><label class="px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs font-bold cursor-pointer">Restore JSON<input type="file" id="backup-import-file" accept="application/json,.json" class="hidden" onchange="importSakuraBackup(event)"></label></div><p id="backup-status" class="text-[10px] text-slate-400">Last export: not yet exported.</p></section>
+      </div>
+      <div class="rounded-xl border border-amber-500/20 bg-amber-950/20 p-3 text-[11px] text-amber-200"><strong>Deployment note:</strong> These browser tools can work locally. Account security and cross-device collaboration depend on Firebase setup, the included database rules, and migrating legacy records first. Do not deploy the new rules against the old schema without following the migration guide.</div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Box -->
+  <div id="toast-msg" class="fixed bottom-6 right-6 bg-slate-900 border-2 border-sky-400 text-white px-5 py-3 rounded-2xl shadow-2xl text-xs font-bold flex items-center gap-3 transform translate-y-24 opacity-0 transition-all duration-300 z-50">
+    <i class="ph-bold ph-check-circle text-base"></i>
+    <span id="toast-text" class="font-mono text-sky-200">Notification</span>
+  </div>
+
+  <script>
+    // ==========================================================
+    // FIREBASE INITIALIZATION & REALTIME SYNC
+    // ==========================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyBfDEhSw705FxOsyhWx1R2f8qp1M9aNkNk",
+      authDomain: "sakura-no-hana-9d9f9.firebaseapp.com",
+      databaseURL: "https://sakura-no-hana-9d9f9-default-rtdb.firebaseio.com",
+      projectId: "sakura-no-hana-9d9f9",
+      storageBucket: "sakura-no-hana-9d9f9.firebasestorage.app",
+      messagingSenderId: "935970879547",
+      appId: "1:935970879547:web:79ff41f126ff442f3dc41e"
+    };
+
+    // Initialize Firebase Compat App & RTDB
+    firebase.initializeApp(firebaseConfig);
+    const rtdb = firebase.database();
+
+
+    let posts = [];
+    let users = [];
+    let customTemplates = [];
+    let currentUser = null;
+    let isAdminSessionActive = false;
+
+    let activeFilter = 'All';
+    let selectedPostType = 'note';
+    let isCurrentPostPublic = true;
+    let editingPostId = null;
+    let canvasStickers = [];
+    let attachedImages = [];
+
+    // ==========================================================
+    // SAFE HTML, GUEST MODE AND PROFESSIONAL EDITOR TOOLS
+    // ==========================================================
+    const OK_TAGS = new Set(['P','BR','B','STRONG','I','EM','U','S','STRIKE','DEL','H1','H2','H3','H4','BLOCKQUOTE','UL','OL','LI','SPAN','DIV','A','CODE','PRE','HR','TABLE','THEAD','TBODY','TR','TH','TD','FONT','SUB','SUP','MARK']);
+    const DROP_TAGS = new Set(['SCRIPT','STYLE','IFRAME','OBJECT','EMBED','LINK','META','SVG','MATH','FORM','INPUT','BUTTON','TEXTAREA','SELECT','IMG','VIDEO','AUDIO','BASE','TEMPLATE','NOSCRIPT']);
+    const OK_CLASS = /^(rainbow-text|hl-(pink|yellow|cyan|green|purple|orange)|cd-(check|callout|info|tip|warn|ok)|done)$/;
+    function sanitizeHtml(html) {
+      const doc = new DOMParser().parseFromString('<body>' + (html || '') + '</body>', 'text/html');
+      (function walk(node) {
+        Array.from(node.childNodes).forEach(ch => {
+          if (ch.nodeType === 3) return;
+          if (ch.nodeType !== 1) { ch.remove(); return; }
+          const tag = ch.nodeName;
+          if (DROP_TAGS.has(tag)) { ch.remove(); return; }
+          walk(ch);
+          if (!OK_TAGS.has(tag)) { while (ch.firstChild) node.insertBefore(ch.firstChild, ch); ch.remove(); return; }
+          Array.from(ch.attributes).forEach(a => {
+            const n = a.name.toLowerCase(), v = a.value;
+            if (n === 'class') { const k = v.split(/\s+/).filter(c => OK_CLASS.test(c)); k.length ? ch.setAttribute('class', k.join(' ')) : ch.removeAttribute('class'); }
+            else if (n === 'href' && tag === 'A' && /^(https?:|mailto:)/i.test(v.trim())) { /* keep */ }
+            else if (n === 'style') { const keep = v.split(';').map(x => x.trim()).filter(x => /^(color|background-color|font-size|font-weight|font-style|text-align|text-decoration)\s*:\s*[#\w\s%.,()-]+$/i.test(x) && !/url|expression|javascript/i.test(x)); keep.length ? ch.setAttribute('style', keep.join(';')) : ch.removeAttribute('style'); }
+            else if (tag === 'FONT' && ['color','size','face'].includes(n)) { /* keep */ }
+            else if ((n === 'colspan' || n === 'rowspan') && /^\d{1,2}$/.test(v)) { /* keep */ }
+            else ch.removeAttribute(a.name);
+          });
+          if (tag === 'A') { if (ch.getAttribute('href')) { ch.setAttribute('target', '_blank'); ch.setAttribute('rel', 'noopener noreferrer nofollow'); } }
+        });
+      })(doc.body);
+      return doc.body.innerHTML;
+    }
+
+    // Guest mode: entries live only in this browser until the visitor creates an account
+    const GUEST_KEY = 'cd_guest_entries_v1';
+    let guestDrafts = [];
+    try { guestDrafts = JSON.parse(localStorage.getItem(GUEST_KEY)) || []; } catch (e) {}
+    function saveGuest() { try { localStorage.setItem(GUEST_KEY, JSON.stringify(guestDrafts)); } catch (e) { showToast('Browser storage is full or blocked. Download your entry to keep it.'); } }
+    function isGuestPost(p) { return !currentUser && !!p && p.ownerUID === 'guest'; }
+    function startGuest() { closeAuthModal(); openCreateModal(); }
+    function updateGuestBanner() {
+      const b = document.getElementById('guest-banner'); if (!b) return;
+      const show = !currentUser && guestDrafts.length > 0;
+      b.classList.toggle('hidden', !show);
+      const c = document.getElementById('guest-count'); if (c) c.textContent = guestDrafts.length + (guestDrafts.length === 1 ? ' entry' : ' entries');
+    }
+    function applyGuestPrivacyUI() {
+      const note = document.getElementById('guest-note'); if (note) note.classList.toggle('hidden', !!currentUser);
+      if (currentUser) return;
+      isCurrentPostPublic = false;
+      const btn = document.getElementById('btn-privacy-toggle');
+      if (btn) { btn.className = 'px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-bold text-[10px] flex items-center gap-1'; btn.innerHTML = '<i class="ph-bold ph-lock-key"></i> <span>Saved on this device</span>'; }
+    }
+    async function importGuestDrafts() {
+      if (!currentUser || !currentUser.uid || !guestDrafts.length) return;
+      const fu = firebase.auth().currentUser;
+      if (!fu || !fu.emailVerified) { showToast('Verify your email to move your guest entries into your account.'); return; }
+      let done = 0;
+      for (const p of guestDrafts.slice()) {
+        try {
+          const copy = { ...p, ownerUID: currentUser.uid, ownerUsername: currentUser.username, author: currentUser.username, authorAvatar: currentUser.avatarPhoto, isPublic: false };
+          delete copy.id;
+          await rtdb.ref('private_posts/' + currentUser.uid).push().set(copy);
+          guestDrafts = guestDrafts.filter(x => x.id !== p.id); done++;
+        } catch (e) { break; }
+      }
+      saveGuest();
+      if (done) { showToast(done + (done === 1 ? ' guest entry' : ' guest entries') + ' moved to your private vault'); }
+      updateGuestBanner();
+    }
+
+    // Professional editor tools
+    function insertHtmlAtCursor(html) { document.getElementById('post-editor').focus(); document.execCommand('insertHTML', false, html); syncLivePreview(); updateWordCount(); }
+    function setFontSize(v) { if (!v) return; executeStyle('fontSize', v); }
+    function insertLink() {
+      const url = prompt('Link address (must start with https://)');
+      if (!url) return;
+      if (!/^https?:\/\//i.test(url.trim())) { showToast('Links must start with http:// or https://'); return; }
+      executeStyle('createLink', url.trim());
+    }
+    function insertTable() {
+      const r = Math.min(12, parseInt(prompt('Rows, including the header row', '3'), 10) || 0);
+      const c = Math.min(8, parseInt(prompt('Columns', '3'), 10) || 0);
+      if (r < 1 || c < 1) return;
+      const row = tag => '<tr>' + Array.from({ length: c }, () => '<' + tag + '>&nbsp;</' + tag + '>').join('') + '</tr>';
+      insertHtmlAtCursor('<table><thead>' + row('th') + '</thead><tbody>' + Array.from({ length: Math.max(0, r - 1) }, () => row('td')).join('') + '</tbody></table><p><br></p>');
+    }
+    function insertChecklist() {
+      document.getElementById('post-editor').focus();
+      document.execCommand('insertUnorderedList');
+      let n = window.getSelection().anchorNode;
+      while (n && n.nodeName !== 'UL' && n.id !== 'post-editor') n = n.parentNode;
+      if (n && n.nodeName === 'UL') n.classList.toggle('cd-check');
+      syncLivePreview();
+    }
+    function insertCallout(kind) {
+      const label = { info: 'Note', tip: 'Tip', warn: 'Warning', ok: 'Done' }[kind] || 'Note';
+      insertHtmlAtCursor('<div class="cd-callout cd-' + kind + '"><strong>' + label + ':</strong> Write here</div><p><br></p>');
+    }
+    function insertDivider() { executeStyle('insertHorizontalRule'); }
+    function insertCodeBlock() {
+      const t = window.getSelection().toString() || 'code';
+      insertHtmlAtCursor('<pre><code>' + t.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])) + '</code></pre><p><br></p>');
+    }
+    function updateWordCount() {
+      const ed = document.getElementById('post-editor'), out = document.getElementById('word-count');
+      if (!ed || !out) return;
+      const t = ed.innerText.trim(), w = t ? t.split(/\s+/).length : 0;
+      out.textContent = w + ' words · ' + (w ? Math.max(1, Math.round(w / 200)) : 0) + ' min read';
+    }
+    function entryDocument() {
+      const title = (document.getElementById('post-title').value || 'Untitled entry').replace(/[<>&]/g, '');
+      const body = sanitizeHtml(document.getElementById('post-editor').innerHTML);
+      return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>' + title + '</title><style>body{font:16px/1.65 system-ui,sans-serif;max-width:720px;margin:40px auto;padding:0 20px;color:#111}table{border-collapse:collapse;width:100%}th,td{border:1px solid #bbb;padding:6px 10px;text-align:left}th{background:#eef2f7}.cd-callout{border-left:4px solid #38bdf8;background:#eef7fd;padding:10px 14px;margin:12px 0}pre{background:#f3f4f6;padding:12px;overflow:auto}blockquote{border-left:3px solid #ccc;margin-left:0;padding-left:14px;color:#444}</style></head><body><h1>' + title + '</h1>' + body + '</body></html>';
+    }
+    function exportEntryHtml() {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([entryDocument()], { type: 'text/html' }));
+      a.download = ((document.getElementById('post-title').value || 'entry').replace(/[^\w-]+/g, '-').slice(0, 40) || 'entry') + '.html';
+      a.click();
+    }
+    function printEntry() {
+      const w = window.open('', '_blank');
+      if (!w) { showToast('Allow pop-ups to print or save as PDF.'); return; }
+      w.document.open(); w.document.write(entryDocument()); w.document.close(); w.focus(); setTimeout(() => w.print(), 300);
+    }
+    document.addEventListener('click', e => {
+      const li = e.target;
+      if (li && li.nodeName === 'LI' && li.parentNode.classList && li.parentNode.classList.contains('cd-check') && li.closest('#post-editor') && e.offsetX < 26) { li.classList.toggle('done'); syncLivePreview(); }
+    });
+
+    // Built-in starter templates
+    const defaultTemplates = [
+      {"id": "pro-meeting", "name": "Meeting Notes", "title": "Meeting Notes: ", "tags": ["Meeting", "Work"], "theme": "theme-slate", "font": "font-sans", "tape": "none", "stickers": [], "html": "<table><thead><tr><th>Date</th><th>Attendees</th><th>Facilitator</th></tr></thead><tbody><tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr></tbody></table><h2>Agenda</h2><ol><li>Topic one</li><li>Topic two</li></ol><h2>Discussion</h2><p>Key points raised.</p><div class=\"cd-callout cd-ok\"><strong>Decisions:</strong> Write the agreed outcomes here.</div><h2>Action items</h2><ul class=\"cd-check\"><li>Owner: task, due date</li><li>Owner: task, due date</li></ul>"},
+      {"id": "pro-project", "name": "Project Plan", "title": "Project Plan: ", "tags": ["Project", "Planning"], "theme": "theme-slate", "font": "font-sans", "tape": "none", "stickers": [], "html": "<h2>Overview</h2><p>What the project is and why it matters.</p><h2>Goals</h2><ul><li>Primary goal</li><li>Success measure</li></ul><h2>Milestones</h2><table><thead><tr><th>Milestone</th><th>Owner</th><th>Due</th><th>Status</th></tr></thead><tbody><tr><td>Kick-off</td><td>&nbsp;</td><td>&nbsp;</td><td>Not started</td></tr><tr><td>First draft</td><td>&nbsp;</td><td>&nbsp;</td><td>Not started</td></tr><tr><td>Launch</td><td>&nbsp;</td><td>&nbsp;</td><td>Not started</td></tr></tbody></table><h2>Risks</h2><div class=\"cd-callout cd-warn\"><strong>Risk:</strong> Describe the risk and how you will reduce it.</div><h2>Next steps</h2><ul class=\"cd-check\"><li>Confirm scope</li><li>Assign owners</li></ul>"},
+      {"id": "pro-weekly", "name": "Weekly Planner", "title": "Weekly Plan: Week of ", "tags": ["Planner", "Weekly"], "theme": "theme-slate", "font": "font-sans", "tape": "none", "stickers": [], "html": "<table><thead><tr><th>Day</th><th>Top priority</th><th>Tasks</th><th>Notes</th></tr></thead><tbody><tr><td>Monday</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>Tuesday</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>Wednesday</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>Thursday</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>Friday</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>Saturday</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>Sunday</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr></tbody></table><h2>Weekly review</h2><p>What went well, what to change next week.</p>"},
+      {"id": "pro-daily", "name": "Daily Journal", "title": "Daily Journal: ", "tags": ["Journal", "Daily"], "theme": "theme-slate", "font": "font-serif", "tape": "none", "stickers": [], "html": "<h2>Highlights</h2><ul><li>&nbsp;</li></ul><h2>Challenges</h2><p>What was difficult today?</p><h2>Grateful for</h2><ul><li>&nbsp;</li></ul><h2>Tomorrow</h2><ul class=\"cd-check\"><li>Most important task</li><li>Something small and kind</li></ul>"},
+      {"id": "pro-study", "name": "Study Notes", "title": "Study Notes: ", "tags": ["Study", "Notes"], "theme": "theme-slate", "font": "font-sans", "tape": "none", "stickers": [], "html": "<h2>Topic</h2><p>Subject, chapter and date.</p><h2>Key concepts</h2><ul><li>Concept and short definition</li></ul><h2>Worked example</h2><pre><code>Steps or formula here</code></pre><h2>Questions to review</h2><ul class=\"cd-check\"><li>Question one</li><li>Question two</li></ul><div class=\"cd-callout cd-tip\"><strong>Summary:</strong> Explain the topic in two sentences.</div>"},
+      {"id": "pro-smart", "name": "SMART Goal Planner", "title": "Goal: ", "tags": ["Goals", "Planning"], "theme": "theme-slate", "font": "font-sans", "tape": "none", "stickers": [], "html": "<table><thead><tr><th>Criteria</th><th>Your answer</th></tr></thead><tbody><tr><td>Specific: what exactly?</td><td>&nbsp;</td></tr><tr><td>Measurable: how will you know?</td><td>&nbsp;</td></tr><tr><td>Achievable: what do you need?</td><td>&nbsp;</td></tr><tr><td>Relevant: why does it matter?</td><td>&nbsp;</td></tr><tr><td>Time-bound: deadline</td><td>&nbsp;</td></tr></tbody></table><h2>First three steps</h2><ul class=\"cd-check\"><li>Step one</li><li>Step two</li><li>Step three</li></ul>"},
+      {"id": "pro-okr", "name": "Quarterly OKRs", "title": "OKRs: Q", "tags": ["OKR", "Goals"], "theme": "theme-slate", "font": "font-sans", "tape": "none", "stickers": [], "html": "<h2>Objective</h2><p>One clear, inspiring sentence.</p><table><thead><tr><th>Key result</th><th>Start</th><th>Target</th><th>Progress</th></tr></thead><tbody><tr><td>KR 1</td><td>&nbsp;</td><td>&nbsp;</td><td>0%</td></tr><tr><td>KR 2</td><td>&nbsp;</td><td>&nbsp;</td><td>0%</td></tr><tr><td>KR 3</td><td>&nbsp;</td><td>&nbsp;</td><td>0%</td></tr></tbody></table><div class=\"cd-callout cd-info\"><strong>Check-in:</strong> Review progress every two weeks.</div>"},
+      {"id": "pro-book", "name": "Book Review", "title": "Book Review: ", "tags": ["Books", "Review"], "theme": "theme-slate", "font": "font-serif", "tape": "none", "stickers": [], "html": "<table><thead><tr><th>Title</th><th>Author</th><th>Pages</th><th>Rating</th></tr></thead><tbody><tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>/ 5</td></tr></tbody></table><h2>Summary</h2><p>The main ideas in your own words.</p><h2>What I learned</h2><ul><li>&nbsp;</li></ul><h2>Favourite passage</h2><blockquote>Write a short quote and the page number.</blockquote>"},
+      {"id": "pro-trip", "name": "Travel Itinerary", "title": "Trip: ", "tags": ["Travel", "Itinerary"], "theme": "theme-slate", "font": "font-sans", "tape": "none", "stickers": [], "html": "<table><thead><tr><th>Day</th><th>Morning</th><th>Afternoon</th><th>Evening</th></tr></thead><tbody><tr><td>Day 1</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>Day 2</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>Day 3</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr></tbody></table><h2>Bookings</h2><ul><li>Stay</li><li>Transport</li></ul><h2>Packing list</h2><ul class=\"cd-check\"><li>Documents</li><li>Chargers</li><li>Clothes</li></ul>"},
+      {"id": "pro-content", "name": "Content Calendar", "title": "Content Calendar: ", "tags": ["Content", "Planning"], "theme": "theme-slate", "font": "font-sans", "tape": "none", "stickers": [], "html": "<table><thead><tr><th>Date</th><th>Channel</th><th>Topic</th><th>Format</th><th>Status</th></tr></thead><tbody><tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>Idea</td></tr><tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>Idea</td></tr><tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>Idea</td></tr></tbody></table>"},
+      {"id": "pro-retro", "name": "Project Retrospective", "title": "Retrospective: ", "tags": ["Team", "Review"], "theme": "theme-slate", "font": "font-sans", "tape": "none", "stickers": [], "html": "<div class=\"cd-callout cd-ok\"><strong>Went well:</strong> &nbsp;</div><div class=\"cd-callout cd-warn\"><strong>Could improve:</strong> &nbsp;</div><div class=\"cd-callout cd-info\"><strong>Ideas to try:</strong> &nbsp;</div><h2>Actions</h2><ul class=\"cd-check\"><li>Action, owner, date</li></ul>"},
+      {"id": "pro-budget", "name": "Monthly Budget", "title": "Budget: ", "tags": ["Budget", "Planning"], "theme": "theme-slate", "font": "font-sans", "tape": "none", "stickers": [], "html": "<table><thead><tr><th>Category</th><th>Planned</th><th>Actual</th><th>Difference</th></tr></thead><tbody><tr><td>Income</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>Housing</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>Food</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>Transport</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>Savings</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr></tbody></table><div class=\"cd-callout cd-tip\"><strong>Review:</strong> Compare planned and actual at month end.</div>"},
+      {"id": "pro-recipe", "name": "Recipe Card", "title": "Recipe: ", "tags": ["Recipe", "Food"], "theme": "theme-slate", "font": "font-sans", "tape": "none", "stickers": [], "html": "<table><thead><tr><th>Prep</th><th>Cook</th><th>Serves</th></tr></thead><tbody><tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr></tbody></table><h2>Ingredients</h2><ul class=\"cd-check\"><li>Ingredient and amount</li><li>Ingredient and amount</li></ul><h2>Method</h2><ol><li>First step</li><li>Second step</li></ol><div class=\"cd-callout cd-tip\"><strong>Tip:</strong> Notes on swaps or storage.</div>"},
+      {"id": "pro-brainstorm", "name": "Brainstorm Board", "title": "Brainstorm: ", "tags": ["Ideas", "Planning"], "theme": "theme-slate", "font": "font-sans", "tape": "none", "stickers": [], "html": "<h2>Problem</h2><p>State the problem in one sentence.</p><h2>Ideas</h2><ul><li>&nbsp;</li><li>&nbsp;</li></ul><h2>Evaluation</h2><table><thead><tr><th>Idea</th><th>Impact</th><th>Effort</th><th>Decision</th></tr></thead><tbody><tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr></tbody></table>"},
+      { id: 'pookie', name: '🎀 Pookie Diary', title: 'Pookie Diary: Sweet Whispers 🎀', tags: ['Pookie', 'Daily', 'Diary'], theme: 'theme-sakura', font: 'font-cute', tape: 'washi-floral', stickers: ['🎀', '🧸'], html: '<h2><span class="rainbow-text">Dear Diary...</span> 🌸</h2><p>Today was filled with <span class="hl-pink">soft pastel moments</span>. I organized my scrapbooks and planned new goals.</p><blockquote>"Bloom gently at your own pace."</blockquote>' },
+      { id: 'cornell', name: '📚 Cornell Notes', title: 'Cornell Lecture Notes: ', tags: ['Cornell', 'Study', 'Lecture'], theme: 'theme-slate', font: 'font-mono', tape: 'washi-grid', stickers: ['📌'], html: '<h2>💡 Cues & Key Principles</h2><ul><li>Definition of <span class="hl-yellow">First Principles</span></li><li>Core Equilibrium Mechanism</li></ul><h2>📝 Detailed Notes</h2><p>Comprehensive breakdown of concepts discussed...</p><blockquote><b>Summary:</b> Core theorem verified.</blockquote>' },
+      { id: 'braindump', name: '🧠 Brain Dump', title: 'Daily Stream-of-Consciousness Brain Dump 🧠', tags: ['BrainDump', 'Focus', 'Unclutter'], theme: 'theme-matcha', font: 'font-handwritten', tape: 'none', stickers: ['☕'], html: '<h2>⚡ Unsorted Ideas & Priorities</h2><ul><li>Draft chapter 3 character interaction</li><li>Review algorithm runtime complexity</li><li>Pick up lavender essential oil</li></ul><blockquote>"Write without editing; clear the mental browser tabs."</blockquote>' },
+      { id: 'tactical', name: '♟ Mastermind', title: 'Mastermind Strategy: Tactical Breakdown ♟️', tags: ['Mastermind', 'Strategy', 'GameTheory'], theme: 'theme-slate', font: 'font-mono', tape: 'none', stickers: ['⭐'], html: '<h2>♟️ Strategic Objectives & Outcomes</h2><p><span class="hl-cyan">Core Premise:</span> Antagonistic decision analysis and counter-maneuvers.</p><ul><li><b>Phase 1:</b> Observe behavior patterns and hidden variables</li><li><b>Phase 2:</b> Establish secondary fail-safe options</li><li><b>Phase 3:</b> Decisive execution</li></ul><blockquote>"Information supremacy dictates the outcome before the first move."</blockquote>' }
+    ];
+
+    // Tactical Anime Avatars
+    const animeTacticalAvatarPack = [
+      { name: 'Mind-Reader Anya', url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=300&q=80' },
+      { name: 'Airbender Monk', url: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=300&q=80' },
+      { name: 'Minimalist Shonen', url: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=300&q=80' },
+      { name: 'Sunset Headphone Tactician', url: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=300&q=80' },
+      { name: 'Blue Cyber Strategist', url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300&q=80' },
+      { name: 'Lightning White-Hair Master', url: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=300&q=80' },
+      { name: 'Spectacled Dark Detective', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&q=80' },
+      { name: 'Chibi Cherry Blossom', url: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=300&q=80' }
+    ];
+    let selectedRegAvatar = animeTacticalAvatarPack[0].url;
+
+    // Realtime Database sync using authenticated profile and separated public/private paths.
+    let publicPostsUnsubscribe = null;
+    let privatePostsUnsubscribe = null;
+    let publicPosts = [];
+    let privatePosts = [];
+    let collabUnsubscribe = null;
+    let activeCollabRoomId = null;
+    let collabSaveHandle = null;
+    let adminProfilesRef = null;
+    let adminProfilesListener = null;
+
+    function initRealtimeCloudSync() {
+      rtdb.ref('public_posts').on('value', (snapshot) => {
+        const val = snapshot.val();
+        publicPosts = val ? Object.keys(val).map(key => ({ id: key, ...val[key], isPublic: true })) : [];
+        publicPosts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        if (!publicPosts.length) seedInitialPostToCloud();
+        refreshCombinedPosts();
+      }, (err) => { console.error('Public posts sync failed:', err); showToast('Public wall could not sync. Check Firebase rules.'); });
+
+      rtdb.ref('custom_templates').on('value', (snapshot) => {
+        const val = snapshot.val();
+        customTemplates = val ? Object.keys(val).map(key => ({ id: key, ...val[key] })) : [];
+        renderTemplatesButtons(); if (isAdminSessionActive) renderAdminCustomTemplates();
+      }, () => { customTemplates = []; renderTemplatesButtons(); });
+
+      rtdb.ref('site_announcement').on('value', (snapshot) => {
+        const text = snapshot.val();
+        if (text) document.getElementById('global-announcement-text').textContent = text;
+      }, () => {});
+    }
+
+    function syncPrivatePosts(uid) {
+      if (privatePostsUnsubscribe) { privatePostsUnsubscribe(); privatePostsUnsubscribe = null; }
+      if (!uid) { privatePosts = []; refreshCombinedPosts(); return; }
+      const ref = rtdb.ref('private_posts/' + uid);
+      const listener = (snapshot) => {
+        const val = snapshot.val();
+        privatePosts = val ? Object.keys(val).map(key => ({ id: key, ...val[key], isPublic: false })) : [];
+        privatePosts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); refreshCombinedPosts();
+      };
+      ref.on('value', listener, (err) => { console.error('Private posts sync failed:', err); showToast('Private vault could not sync. Check account/rules.'); });
+      privatePostsUnsubscribe = () => ref.off('value', listener);
+    }
+
+    function refreshCombinedPosts() {
+      posts = [...publicPosts, ...privatePosts, ...(currentUser ? [] : guestDrafts)].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      renderPosts(); if (isAdminSessionActive) renderAdminDashboardData(); updateFeatureStudio();
+    }
+
+    function postRefFor(postOrId, desiredPublic = null) {
+      const post = typeof postOrId === 'string' ? posts.find(p => p.id === postOrId) : postOrId;
+      const isPublic = desiredPublic === null ? !!(post && post.isPublic) : !!desiredPublic;
+      if (isPublic) return rtdb.ref('public_posts/' + (post ? post.id : ''));
+      if (!currentUser || !currentUser.uid) throw new Error('Sign in to access a private entry.');
+      return rtdb.ref('private_posts/' + currentUser.uid + '/' + (post ? post.id : ''));
+    }
+
+    function seedInitialPostToCloud() {
+      const initialPost = {
+        ownerUID: 'system',
+        ownerUsername: 'CloudDiariesCreator',
+        isPublic: true,
+        type: 'note',
+        theme: 'theme-sakura',
+        font: 'font-cute',
+        tape: 'washi-floral',
+        stickers: [{ id: 'stk-init', content: '🌸', x: 80, y: 15 }],
+        images: [],
+        title: 'Welcome to Cloud Diaries! ☁️',
+        author: 'CloudDiariesCreator',
+        authorAvatar: animeTacticalAvatarPack[0].url,
+        date: 'Today',
+        tags: ['Welcome', 'Sanctuary'],
+        bodyHtml: '<p><span class="rainbow-text">Welcome writers and tacticians!</span> Compose your notes, draw plans, attach freely draggable photos, and customize your canvas in real time.</p>',
+        likes: 12,
+        likedBy: [],
+        comments: [],
+        timestamp: Date.now()
+      };
+      rtdb.ref('public_posts').push(initialPost).catch(err => console.warn('Welcome seed requires write access:', err));
+    }
+
+    function renderTacticalAvatars() {
+      const grid = document.getElementById('tactical-avatars-grid');
+      if (!grid) return;
+      grid.innerHTML = animeTacticalAvatarPack.map(item => `
+        <div 
+          onclick="pickAvatar('${item.url}')" 
+          title="${item.name}"
+          class="group relative rounded-2xl border-2 cursor-pointer transition hover:scale-105 overflow-hidden bg-slate-950 aspect-square ${selectedRegAvatar === item.url ? 'border-sky-400 ring-2 ring-sky-500/40' : 'border-white/10'}"
+        >
+          <img src="${item.url}" class="w-full h-full object-cover">
+          <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center p-1 text-center">
+            <span class="text-[8px] text-sky-200 font-bold leading-tight font-display">${item.name}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function pickAvatar(url) {
+      selectedRegAvatar = url;
+      renderTacticalAvatars();
+    }
+
+    function handleCustomAvatarUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        selectedRegAvatar = event.target.result;
+        renderTacticalAvatars();
+        showToast("Custom avatar photo loaded!");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // ==========================================================
+    // AUTHENTICATION & LOGIN
+    // ==========================================================
+    function updateAuthUI() {
+      const container = document.getElementById('user-nav-container');
+      const badge = document.getElementById('active-user-badge');
+      if (!container) return;
+
+      if (currentUser && currentUser.username) {
+        if (badge) badge.textContent = `${currentUser.username}`;
+        container.innerHTML = `
+          <div class="flex items-center gap-2 bg-slate-900 border border-white/10 px-3 py-1 rounded-2xl text-xs">
+            <img src="${currentUser.avatarPhoto}" class="w-6 h-6 rounded-lg object-cover border border-sky-400">
+            <span class="font-bold text-white max-w-[90px] truncate">${currentUser.username}</span>
+            <button type="button" onclick="logout()" class="text-slate-400 hover:text-rose-400 ml-1.5" title="Sign Out">
+              <i class="ph-bold ph-sign-out text-sm"></i>
+            </button>
+          </div>
+        `;
+      } else {
+        if (badge) badge.textContent = 'Visitor Mode';
+        container.innerHTML = `
+          <button type="button" onclick="openAuthModal()" class="px-3.5 py-2 rounded-2xl bg-slate-900 hover:bg-slate-800 text-sky-300 border border-white/10 text-xs font-bold transition flex items-center gap-1.5">
+            <i class="ph-bold ph-user-circle text-base"></i>
+            <span>Sign In / ID</span>
+          </button>
+        `;
+      }
+    }
+
+    function openAuthModal() {
+      switchAuthFlow('login');
+      document.getElementById('auth-modal').classList.remove('hidden');
+      document.getElementById('auth-modal').classList.add('flex');
+    }
+    function closeAuthModal() {
+      document.getElementById('auth-modal').classList.add('hidden');
+      document.getElementById('auth-modal').classList.remove('flex');
+    }
+
+    function switchAuthFlow(flow) {
+      document.getElementById('auth-login-flow').classList.add('hidden');
+      document.getElementById('auth-register-flow').classList.add('hidden');
+      document.getElementById('auth-forgot-flow').classList.add('hidden');
+
+      if (flow === 'login') document.getElementById('auth-login-flow').classList.remove('hidden');
+      if (flow === 'register') {
+        renderTacticalAvatars();
+        document.getElementById('auth-register-flow').classList.remove('hidden');
+      }
+      if (flow === 'forgot') {
+        document.getElementById('auth-forgot-flow').classList.remove('hidden');
+      }
+    }
+
+    async function handleLoginSubmit() {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      if (!email || !password) { showToast('Enter your email and password.'); return; }
+      try { await firebase.auth().signInWithEmailAndPassword(email, password); closeAuthModal(); showToast('Welcome back to Cloud Diaries!'); }
+      catch (err) { showToast(authErrorMessage(err)); }
+    }
+
+    async function handleRegisterSubmit() {
+      const username = document.getElementById('reg-username').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      if (!username || !email || !password) { showToast('Fill in username, email and password.'); return; }
+      if (username.length < 2 || username.length > 30 || !/^[\p{L}\p{N}_ -]+$/u.test(username)) { showToast('Username must be 2–30 letters, numbers, spaces, _ or -.'); return; }
+      if (password.length < 8) { showToast('Use a password with at least 8 characters.'); return; }
+      try {
+        const credential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        const profile = { uid: credential.user.uid, username, email, emailVerified: !!credential.user.emailVerified, avatarPhoto: selectedRegAvatar, joinedAt: Date.now(), schemaVersion: 2 };
+        await rtdb.ref('profiles/' + credential.user.uid).set(profile);
+        currentUser = profile; updateAuthUI(); closeAuthModal(); renderPosts(); showToast('Account created. Verify your email from the link we sent.');
+        try { await credential.user.sendEmailVerification(); } catch (_) {}
+      } catch (err) { showToast(authErrorMessage(err)); }
+    }
+
+    async function sendPasswordReset() {
+      const email = document.getElementById('reset-email').value.trim();
+      if (!email) { showToast('Enter your account email.'); return; }
+      try { await firebase.auth().sendPasswordResetEmail(email); showToast('If the account exists, a reset email has been sent.'); switchAuthFlow('login'); }
+      catch (err) { showToast(authErrorMessage(err)); }
+    }
+
+    function authErrorMessage(err) {
+      const code = (err && err.code) || '';
+      const messages = {
+        'auth/invalid-email': 'Enter a valid email address.',
+        'auth/user-disabled': 'This account is disabled.',
+        'auth/user-not-found': 'Invalid email or password.',
+        'auth/wrong-password': 'Invalid email or password.',
+        'auth/invalid-credential': 'Invalid email or password.',
+        'auth/email-already-in-use': 'That email already has an account.',
+        'auth/weak-password': 'Choose a stronger password (at least 8 characters).',
+        'auth/too-many-requests': 'Too many attempts. Wait a while and try again.',
+        'auth/operation-not-allowed': 'Enable Email/Password in Firebase Authentication settings.',
+        'auth/network-request-failed': 'Network error. Check your connection.'
+      };
+      return messages[code] || 'Authentication failed. Check Firebase setup and try again.';
+    }
+
+    async function loadAuthenticatedProfile(user) {
+      if (!user) { currentUser = null; users = []; updateAuthUI(); renderPosts(); syncPrivatePosts(null); return; }
+      try {
+        const snap = await rtdb.ref('profiles/' + user.uid).once('value');
+        const profile = snap.val();
+        if (!profile || !profile.username) {
+          currentUser = { uid: user.uid, username: user.email ? user.email.split('@')[0] : 'Cloud Diaries Member', email: user.email || '', avatarPhoto: animeTacticalAvatarPack[0].url };
+          showToast('Profile setup is incomplete. Please contact the site administrator.');
+        } else currentUser = { ...profile, uid: user.uid, email: user.email || profile.email };
+        updateAuthUI(); renderPosts(); syncPrivatePosts(user.uid); updateFeatureStudio(); importGuestDrafts();
+      } catch (err) { currentUser = null; updateAuthUI(); showToast('Could not load profile. Check database rules.'); }
+    }
+
+    function logout() { firebase.auth().signOut().then(() => { currentUser = null; updateAuthUI(); renderPosts(); showToast('Signed out.'); }).catch(() => showToast('Could not sign out.')); }
+
+    // ==========================================================
+    // COMPOSE STUDIO & PHOTO CANVAS SYSTEM
+    // ==========================================================
+    function openCreateModal(postIdToEdit = null) {
+      editingPostId = postIdToEdit;
+
+      if (postIdToEdit) {
+        const post = posts.find(p => p.id === postIdToEdit);
+        if (post) {
+          document.getElementById('post-title').value = post.title || '';
+          document.getElementById('post-editor').innerHTML = sanitizeHtml(post.bodyHtml || '');
+          document.getElementById('post-tags').value = (post.tags || []).join(', ');
+          document.getElementById('post-theme-select').value = post.theme || 'theme-slate';
+          document.getElementById('post-font-select').value = post.font || 'font-sans';
+          document.getElementById('post-tape-select').value = post.tape || 'none';
+          document.getElementById('type-select').value = post.type || 'note';
+          selectedPostType = post.type || 'note';
+          isCurrentPostPublic = post.isPublic;
+          canvasStickers = JSON.parse(JSON.stringify(post.stickers || []));
+          attachedImages = JSON.parse(JSON.stringify(post.images || []));
+        }
+      } else {
+        document.getElementById('post-title').value = '';
+        document.getElementById('post-editor').innerHTML = '';
+        document.getElementById('post-tags').value = '';
+        isCurrentPostPublic = !!currentUser;
+        canvasStickers = [];
+        attachedImages = [];
+      }
+
+      renderAttachedImagesControls();
+      renderTemplatesButtons();
+      syncLivePreview();
+      applyGuestPrivacyUI();
+      updateWordCount();
+      document.getElementById('create-modal').classList.remove('hidden');
+      document.getElementById('create-modal').classList.add('flex');
+    }
+
+    function closeCreateModal() {
+      document.getElementById('create-modal').classList.add('hidden');
+      document.getElementById('create-modal').classList.remove('flex');
+      editingPostId = null;
+      attachedImages = [];
+      canvasStickers = [];
+    }
+
+    function togglePostPrivacy() {
+      if (!currentUser) { showToast('Create a free account to publish to the community wall.'); openAuthModal(); return; }
+      isCurrentPostPublic = !isCurrentPostPublic;
+      const btn = document.getElementById('btn-privacy-toggle');
+      if (isCurrentPostPublic) {
+        btn.className = "px-2.5 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[10px] flex items-center gap-1";
+        btn.innerHTML = `<i class="ph-bold ph-globe"></i> <span>Public</span>`;
+      } else {
+        btn.className = "px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-bold text-[10px] flex items-center gap-1";
+        btn.innerHTML = `<i class="ph-bold ph-lock-key"></i> <span>Private Vault</span>`;
+      }
+      syncLivePreview();
+    }
+
+    function selectPostType(type) {
+      selectedPostType = type;
+      syncLivePreview();
+    }
+
+    async function submitPinPost() {
+      const titleInput = document.getElementById('post-title');
+      const editorInput = document.getElementById('post-editor');
+      const title = titleInput ? titleInput.value.trim() : '';
+      const bodyHtml = editorInput ? sanitizeHtml(editorInput.innerHTML.trim()) : '';
+      const rawTags = document.getElementById('post-tags').value.trim();
+      const theme = document.getElementById('post-theme-select').value;
+      const font = document.getElementById('post-font-select').value;
+      const tape = document.getElementById('post-tape-select').value;
+
+      if (!title) {
+        showToast("Please enter an entry title!");
+        return;
+      }
+
+      const tags = rawTags ? rawTags.split(',').map(t => t.trim()) : [selectedPostType.toUpperCase()];
+
+      const me = currentUser || { uid: 'guest', username: 'Guest', avatarPhoto: animeTacticalAvatarPack[0].url };
+      const postPayload = {
+        ownerUID: me.uid,
+        ownerUsername: me.username,
+        isPublic: currentUser ? isCurrentPostPublic : false,
+        type: selectedPostType,
+        theme,
+        font,
+        tape,
+        stickers: canvasStickers,
+        images: attachedImages,
+        title,
+        author: me.username,
+        authorAvatar: me.avatarPhoto,
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        tags,
+        bodyHtml,
+        likes: 0,
+        likedBy: [],
+        comments: [],
+        timestamp: Date.now()
+      };
+
+      if (!currentUser) {
+        const rec = { ...postPayload, isPublic: false };
+        if (editingPostId) {
+          const i = guestDrafts.findIndex(x => x.id === editingPostId);
+          if (i > -1) { rec.id = editingPostId; rec.timestamp = guestDrafts[i].timestamp; guestDrafts[i] = rec; }
+        } else { rec.id = 'guest_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); guestDrafts.unshift(rec); }
+        saveGuest(); closeCreateModal(); refreshCombinedPosts(); filterType('my-private');
+        showToast('Saved on this device. Create a free account to keep it online.');
+        return;
+      }
+      try {
+        if (!currentUser.uid) throw new Error('Your session is not authenticated. Sign in again.');
+        if (editingPostId) {
+          const oldPost = posts.find(p => p.id === editingPostId);
+          const targetRef = postRefFor({ id: editingPostId, isPublic: isCurrentPostPublic }, isCurrentPostPublic);
+          const oldRef = oldPost ? postRefFor(oldPost) : targetRef;
+          if (oldPost && !!oldPost.isPublic !== isCurrentPostPublic) await oldRef.remove();
+          await targetRef.set(postPayload);
+          showToast("Entry updated in cloud!");
+        } else {
+          const targetRef = isCurrentPostPublic ? rtdb.ref('public_posts').push() : rtdb.ref('private_posts/' + currentUser.uid).push();
+          await targetRef.set(postPayload);
+          showToast(isCurrentPostPublic ? "Shared to the community wall" : "Saved to your private vault");
+        }
+        closeCreateModal();
+      } catch(err) {
+        showToast("❌ Error saving to cloud: " + err.message);
+      }
+    }
+
+    async function deletePost(id) {
+      const post = posts.find(p => p.id === id);
+      if (!post) return;
+      if (isGuestPost(post)) { if (confirm('Delete this entry from this device?')) { guestDrafts = guestDrafts.filter(x => x.id !== id); saveGuest(); refreshCombinedPosts(); showToast('Entry removed'); } return; }
+
+      if (!currentUser || (((post.ownerUID && currentUser.uid !== post.ownerUID) || (!post.ownerUID && currentUser.username !== post.ownerUsername)) && !isAdminSessionActive)) {
+        showToast("You can only delete your own pins!");
+        return;
+      }
+
+      if (confirm("Delete this entry forever?")) {
+        try {
+          await postRefFor(id).remove();
+          showToast("Entry removed");
+        } catch(err) {
+          showToast("❌ Error removing post: " + err.message);
+        }
+      }
+    }
+
+    // ==========================================================
+    // MULTI-IMAGE UPLOADER & RESIZER CONTROLLER
+    // ==========================================================
+    function handleMultipleImageUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const newImg = {
+          id: 'img-' + Date.now(),
+          dataUrl: event.target.result,
+          x: 10 + Math.floor(Math.random() * 30),
+          y: 20 + Math.floor(Math.random() * 25),
+          width: 140,
+          rotation: Math.floor(Math.random() * 10) - 5
+        };
+        attachedImages.push(newImg);
+        renderAttachedImagesControls();
+        syncLivePreview();
+        showToast("Photo added! Drag or resize it on the canvas.");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function renderAttachedImagesControls() {
+      const container = document.getElementById('image-attachments-list');
+      if (!container) return;
+
+      if (attachedImages.length === 0) {
+        container.innerHTML = '<span class="text-[10px] text-slate-500 font-mono">No images attached yet.</span>';
+        return;
+      }
+
+      container.innerHTML = attachedImages.map((img, idx) => `
+        <div class="p-2.5 bg-slate-900 border border-white/5 rounded-xl space-y-2">
+          <div class="flex items-center gap-3">
+            <img src="${img.dataUrl}" class="w-12 h-12 object-cover rounded-lg border border-sky-400/40">
+            <div class="flex-1 space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-mono text-sky-300 font-bold">Photo #${idx + 1} Size: ${img.width || 140}px</span>
+                <button type="button" onclick="removeAttachedImage(${idx})" class="text-rose-400 hover:text-white text-xs"><i class="ph-bold ph-trash"></i></button>
+              </div>
+              <input 
+                type="range" 
+                min="60" 
+                max="320" 
+                value="${img.width || 140}" 
+                oninput="updateImageSize(${idx}, this.value)" 
+                class="w-full accent-sky-500 h-1 bg-slate-800 rounded cursor-pointer"
+              >
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-[10px] font-mono text-slate-400">
+            <span>Tilt:</span>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="updateImageRotation(${idx}, -4)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700">↺ -4°</button>
+              <button type="button" onclick="updateImageRotation(${idx}, 0)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700">0°</button>
+              <button type="button" onclick="updateImageRotation(${idx}, 4)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700">↻ +4°</button>
+            </div>
+            <span class="text-sky-300">Drag directly on card</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateImageSize(index, val) {
+      attachedImages[index].width = parseInt(val, 10);
+      syncLivePreview();
+    }
+
+    function updateImageRotation(index, deg) {
+      attachedImages[index].rotation = deg;
+      syncLivePreview();
+    }
+
+    function removeAttachedImage(index) {
+      attachedImages.splice(index, 1);
+      renderAttachedImagesControls();
+      syncLivePreview();
+    }
+
+    // ==========================================================
+    // ADVANCED TEXT FORMATTING
+    // ==========================================================
+    function executeStyle(cmd, val = null) {
+      document.execCommand(cmd, false, val);
+      syncLivePreview();
+    }
+
+    function executeHeading(tag) {
+      document.execCommand('formatBlock', false, tag);
+      syncLivePreview();
+    }
+
+    function applyInlineCode() {
+      const selection = window.getSelection();
+      if (!selection.rangeCount || selection.isCollapsed) {
+        showToast("Select text first!");
+        return;
+      }
+      const range = selection.getRangeAt(0);
+      const code = document.createElement('code');
+      code.className = "px-1.5 py-0.5 rounded bg-slate-800 text-sky-300 font-mono text-[11px] border border-white/10";
+      code.textContent = range.toString();
+
+      range.deleteContents();
+      range.insertNode(code);
+      selection.removeAllRanges();
+      syncLivePreview();
+    }
+
+    function applyCustomSpan(className) {
+      const selection = window.getSelection();
+      if (!selection.rangeCount || selection.isCollapsed) {
+        showToast("Select text first!");
+        return;
+      }
+      const range = selection.getRangeAt(0);
+      const span = document.createElement('span');
+      span.className = className;
+      span.textContent = range.toString();
+
+      range.deleteContents();
+      range.insertNode(span);
+      selection.removeAllRanges();
+      syncLivePreview();
+    }
+
+    // ==========================================================
+    // LIVE PREVIEW & DRAG-AND-DROP CANVAS ENGINE
+    // ==========================================================
+    function syncLivePreview() {
+      const card = document.getElementById('live-preview-card');
+      if (!card) return;
+
+      const tape = document.getElementById('post-tape-select')?.value || 'none';
+      const theme = document.getElementById('post-theme-select')?.value || 'theme-slate';
+      const font = document.getElementById('post-font-select')?.value || 'font-sans';
+      const title = document.getElementById('post-title')?.value.trim() || 'Untitled Diary Entry';
+      const body = document.getElementById('post-editor')?.innerHTML || 'Type on the left to format live...';
+
+      card.className = `w-full max-w-md relative border rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 ${theme} ${font} min-h-[380px] flex flex-col`;
+
+      const tapeContainer = document.getElementById('preview-tape-container');
+      if (tapeContainer) {
+        if (tape !== 'none') {
+          tapeContainer.innerHTML = `<div class="w-full flex justify-center -mt-1.5 mb-2 relative z-30 pointer-events-none"><div class="w-28 h-4 rounded-sm ${tape} shadow-md transform -rotate-1"></div></div>`;
+        } else {
+          tapeContainer.innerHTML = '';
+        }
+      }
+
+      if (document.getElementById('preview-title-display')) document.getElementById('preview-title-display').textContent = title;
+      if (document.getElementById('preview-body-display')) document.getElementById('preview-body-display').innerHTML = body;
+      if (document.getElementById('preview-type-badge')) document.getElementById('preview-type-badge').textContent = selectedPostType.toUpperCase();
+      if (document.getElementById('preview-privacy-badge')) document.getElementById('preview-privacy-badge').textContent = isCurrentPostPublic ? '🌐 Public' : '🔒 Private';
+      if (document.getElementById('preview-author-display')) document.getElementById('preview-author-display').textContent = currentUser ? `By ${currentUser.username}` : 'By You';
+
+      renderInteractiveCanvasLayer();
+    }
+
+    function renderInteractiveCanvasLayer() {
+      const layer = document.getElementById('preview-interactive-layer');
+      if (!layer) return;
+      layer.innerHTML = '';
+
+      attachedImages.forEach(img => {
+        const el = document.createElement('div');
+        el.className = 'drag-canvas-item';
+        el.style.left = `${img.x}%`;
+        el.style.top = `${img.y}%`;
+        el.style.transform = `rotate(${img.rotation || 0}deg)`;
+
+        const widthPx = img.width || 140;
+        el.innerHTML = `
+          <div class="relative group cursor-grab p-1 bg-white/10 backdrop-blur-md rounded-2xl shadow-xl border border-white/20">
+            <img src="${img.dataUrl}" style="width: ${widthPx}px; height: auto;" class="rounded-xl object-cover pointer-events-none">
+            <button type="button" onclick="removeImageById('${img.id}')" class="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow">&times;</button>
+          </div>
+        `;
+        makeCanvasItemDraggable(el, img);
+        layer.appendChild(el);
+      });
+
+      canvasStickers.forEach(stk => {
+        const el = document.createElement('div');
+        el.className = 'drag-canvas-item text-2xl';
+        el.style.left = `${stk.x}%`;
+        el.style.top = `${stk.y}%`;
+        el.innerHTML = `
+          <div class="relative group cursor-grab">
+            <span class="pointer-events-none filter drop-shadow">${stk.content}</span>
+            <button type="button" onclick="removeSticker('${stk.id}')" class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-rose-500 text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100">&times;</button>
+          </div>
+        `;
+        makeCanvasItemDraggable(el, stk);
+        layer.appendChild(el);
+      });
+    }
+
+    function removeImageById(id) {
+      attachedImages = attachedImages.filter(im => im.id !== id);
+      renderAttachedImagesControls();
+      syncLivePreview();
+    }
+
+    function spawnCanvasSticker(content) {
+      const stickerObj = {
+        id: 'stk-' + Date.now(),
+        content,
+        x: 20 + Math.floor(Math.random() * 55),
+        y: 15 + Math.floor(Math.random() * 50)
+      };
+      canvasStickers.push(stickerObj);
+      syncLivePreview();
+      showToast("Sticker placed! Drag anywhere.");
+    }
+
+    function removeSticker(id) {
+      canvasStickers = canvasStickers.filter(s => s.id !== id);
+      syncLivePreview();
+    }
+
+    function makeCanvasItemDraggable(element, itemData) {
+      let isDragging = false;
+      let startX, startY;
+      const container = document.getElementById('live-preview-card');
+
+      function onStart(e) {
+        if (e.target.tagName === 'BUTTON') return;
+        isDragging = true;
+        const evt = e.touches ? e.touches[0] : e;
+        startX = evt.clientX;
+        startY = evt.clientY;
+      }
+      function onMove(e) {
+        if (!isDragging) return;
+        const evt = e.touches ? e.touches[0] : e;
+        const dx = evt.clientX - startX;
+        const dy = evt.clientY - startY;
+        startX = evt.clientX;
+        startY = evt.clientY;
+
+        const rect = container.getBoundingClientRect();
+        let newX = ((element.offsetLeft + dx) / rect.width) * 100;
+        let newY = ((element.offsetTop + dy) / rect.height) * 100;
+
+        itemData.x = Math.max(0, Math.min(85, newX));
+        itemData.y = Math.max(0, Math.min(85, newY));
+
+        element.style.left = `${itemData.x}%`;
+        element.style.top = `${itemData.y}%`;
+      }
+      function onEnd() { isDragging = false; }
+
+      element.addEventListener('mousedown', onStart);
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onEnd);
+      element.addEventListener('touchstart', onStart, { passive: true });
+      window.addEventListener('touchmove', onMove, { passive: true });
+      window.addEventListener('touchend', onEnd);
+    }
+
+    // ==========================================================
+    // DYNAMIC TEMPLATES
+    // ==========================================================
+    function renderTemplatesButtons() {
+      const container = document.getElementById('dynamic-templates-container');
+      if (!container) return;
+
+      const allTemplates = [...defaultTemplates, ...customTemplates];
+      container.innerHTML = allTemplates.map(tpl => `
+        <button 
+          type="button" 
+          onclick="applyTemplateById('${tpl.id}')" 
+          class="p-1.5 rounded-xl bg-slate-900 hover:bg-sky-500/20 text-slate-300 hover:text-sky-300 border border-white/10 text-left font-bold text-[10px] truncate"
+        >
+          ${tpl.name}
+        </button>
+      `).join('');
+    }
+
+    function applyTemplateById(id) {
+      const allTemplates = [...defaultTemplates, ...customTemplates];
+      const tpl = allTemplates.find(t => t.id === id);
+      if (!tpl) return;
+
+      document.getElementById('post-title').value = tpl.title || '';
+      document.getElementById('post-tags').value = (tpl.tags || []).join(', ');
+      document.getElementById('post-editor').innerHTML = sanitizeHtml(tpl.html || '');
+      document.getElementById('post-theme-select').value = tpl.theme || 'theme-slate';
+      document.getElementById('post-font-select').value = tpl.font || 'font-sans';
+      document.getElementById('post-tape-select').value = tpl.tape || 'none';
+
+      if (tpl.stickers && Array.isArray(tpl.stickers)) {
+        tpl.stickers.forEach(s => spawnCanvasSticker(s));
+      }
+
+      syncLivePreview();
+      showToast(`Template loaded: ${tpl.name}!`);
+    }
+
+    // ==========================================================
+    // CREATOR ADMIN GATEWAY & CONSOLE FEATURES
+    // ==========================================================
+    function handleSecretAdminTrigger(e) {
+      secretAdminClickCount++;
+      clearTimeout(secretAdminTimer);
+      if (secretAdminClickCount >= 3) {
+        secretAdminClickCount = 0;
+        openAdminGatewayModal();
+      } else {
+        secretAdminTimer = setTimeout(() => { secretAdminClickCount = 0; }, 800);
+      }
+    }
+    let secretAdminClickCount = 0;
+    let secretAdminTimer = null;
+
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        openAdminGatewayModal();
+      }
+    });
+
+    function openAdminGatewayModal() {
+      document.getElementById('gateway-admin-key').value = '';
+      document.getElementById('gateway-otp-verify-box').classList.add('hidden');
+      document.getElementById('gateway-question-box').classList.add('hidden');
+      
+      const customQ = 'Administrator access is managed by server-side authorization.';
+      document.getElementById('display-admin-custom-q').textContent = customQ;
+
+      document.getElementById('admin-gateway-modal').classList.remove('hidden');
+      document.getElementById('admin-gateway-modal').classList.add('flex');
+    }
+
+    function closeAdminGatewayModal() {
+      document.getElementById('admin-gateway-modal').classList.add('hidden');
+      document.getElementById('admin-gateway-modal').classList.remove('flex');
+    }
+
+    async function verifyAdminGatewayPass() {
+      try {
+        const user = firebase.auth().currentUser;
+        if (!user) { showToast('Sign in with an authorized administrator account first.'); return; }
+        const token = await user.getIdTokenResult(true);
+        if (token.claims && token.claims.admin === true) { enterAdminMode(); closeAdminGatewayModal(); }
+        else showToast('Admin access must be granted by a trusted server-side custom claim. Local master keys are disabled.');
+      } catch (_) { showToast('Could not verify administrator privileges.'); }
+    }
+
+    async function dispatchAdminGatewayOTP() {
+      showToast('Client-side OTP is disabled. Admin privileges must be verified by Firebase custom claims.');
+      await verifyAdminGatewayPass();
+    }
+
+    async function confirmAdminGatewayOTP() { await verifyAdminGatewayPass(); }
+
+    function toggleAdminQuestionBox() {
+      showToast('Security-question recovery is disabled. Use account recovery and server-managed admin claims.');
+    }
+
+    async function confirmAdminCustomQuestion() { await verifyAdminGatewayPass(); }
+
+    function enterAdminMode() {
+      isAdminSessionActive = true;
+      document.getElementById('admin-mode-banner').classList.remove('hidden');
+      openAdminDashboard();
+      showToast("👑 Welcome Administrator!");
+    }
+
+    function exitAdminMode() {
+      isAdminSessionActive = false;
+      document.getElementById('admin-mode-banner').classList.add('hidden');
+      closeAdminModal();
+      showToast("Exited Administrator Mode.");
+    }
+
+    function openAdminDashboard() {
+      renderAdminDashboardData();
+      renderAdminCustomTemplates();
+      const q = 'Administrator access is managed by server-side authorization.';
+      const a = ''; // Never store admin recovery secrets in the browser.
+      document.getElementById('admin-new-sec-q').value = q;
+      document.getElementById('admin-new-sec-a').value = a;
+
+      document.getElementById('admin-announcement-input').value = document.getElementById('global-announcement-text').textContent;
+
+      document.getElementById('admin-modal').classList.remove('hidden');
+      document.getElementById('admin-modal').classList.add('flex');
+    }
+
+    function closeAdminModal() {
+      document.getElementById('admin-modal').classList.add('hidden');
+      document.getElementById('admin-modal').classList.remove('flex');
+    }
+
+    async function adminAddNewTemplate() {
+      const name = document.getElementById('admin-tpl-name').value.trim();
+      const title = document.getElementById('admin-tpl-title').value.trim();
+      const rawTags = document.getElementById('admin-tpl-tags').value.trim();
+      const theme = document.getElementById('admin-tpl-theme').value;
+      const font = document.getElementById('admin-tpl-font').value;
+      const tape = document.getElementById('admin-tpl-tape').value;
+      const html = document.getElementById('admin-tpl-content').value.trim();
+
+      if (!name || !title) {
+        showToast("Please provide at least a button label and default title!");
+        return;
+      }
+
+      const newTpl = {
+        name,
+        title,
+        tags: rawTags ? rawTags.split(',').map(t => t.trim()) : ['Custom'],
+        theme,
+        font,
+        tape,
+        html: html || '<p>Write your ideas here...</p>',
+        stickers: ['🌸']
+      };
+
+      try {
+        await rtdb.ref('custom_templates').push(newTpl);
+        document.getElementById('admin-tpl-name').value = '';
+        document.getElementById('admin-tpl-title').value = '';
+        document.getElementById('admin-tpl-tags').value = '';
+        document.getElementById('admin-tpl-content').value = '';
+        showToast("✨ New template published to cloud!");
+      } catch(err) {
+        showToast("❌ Error publishing: " + err.message);
+      }
+    }
+
+    function renderAdminCustomTemplates() {
+      const list = document.getElementById('admin-custom-templates-list');
+      if (!list) return;
+
+      if (customTemplates.length === 0) {
+        list.innerHTML = '<span class="text-slate-500 font-mono text-[10px]">No custom templates created yet.</span>';
+        return;
+      }
+
+      list.innerHTML = customTemplates.map((t) => `
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-white/5 text-[11px]">
+          <span class="font-bold text-white">${t.name}</span>
+          <button type="button" onclick="adminDeleteCustomTemplate('${t.id}')" class="text-rose-400 hover:text-white font-mono">Remove</button>
+        </div>
+      `).join('');
+    }
+
+    async function adminDeleteCustomTemplate(id) {
+      try {
+        await rtdb.ref('custom_templates/' + id).remove();
+        showToast("Template removed from cloud.");
+      } catch(err) {
+        showToast("❌ Error: " + err.message);
+      }
+    }
+
+    async function adminUpdateAnnouncement() {
+      const txt = document.getElementById('admin-announcement-input').value.trim();
+      if (!txt) return;
+
+      try {
+        await rtdb.ref('site_announcement').set(txt);
+        showToast("📢 Global announcement updated in cloud!");
+      } catch(err) {
+        showToast("❌ Error: " + err.message);
+      }
+    }
+
+    function saveAdminCredentialsConfig() {
+      document.getElementById('admin-new-master-pass').value = '';
+      document.getElementById('admin-new-sec-a').value = '';
+      showToast('Client-side admin keys and recovery answers are disabled. Configure admin custom claims on a trusted server.');
+    }
+
+    function renderAdminDashboardData() {
+      document.getElementById('admin-metric-users').textContent = users.length;
+      document.getElementById('admin-metric-public').textContent = posts.filter(p => p.isPublic).length;
+      document.getElementById('admin-metric-vaults').textContent = posts.filter(p => !p.isPublic).length;
+
+      const listContainer = document.getElementById('admin-users-list');
+      if (!listContainer) return;
+
+      if (users.length === 0) {
+        listContainer.innerHTML = '<span class="text-slate-500 font-mono">No registered users yet.</span>';
+        return;
+      }
+
+      listContainer.innerHTML = users.map(u => {
+        const userPublicPins = posts.filter(p => p.ownerUsername === u.username && p.isPublic).length;
+        const userPrivatePinsCount = posts.filter(p => p.ownerUsername === u.username && !p.isPublic).length;
+
+        return `
+          <div class="p-3 bg-slate-950 border border-white/10 rounded-2xl flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <img src="${u.avatarPhoto}" class="w-9 h-9 rounded-xl object-cover border border-sky-400">
+              <div>
+                <span class="font-bold text-white block">${u.username}</span>
+                <span class="text-[10px] text-slate-500 font-mono">Joined: ${u.joinedDate || 'Active'}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-4 text-right">
+              <div>
+                <span class="text-[10px] font-mono text-emerald-400 block">${userPublicPins} Public Pins</span>
+                <span class="text-[10px] font-mono text-indigo-400 block font-bold">🔒 ${userPrivatePinsCount} Encrypted Vaulted</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ==========================================================
+    // MASONRY WALL & FULLVIEW MODAL
+    // ==========================================================
+    function renderPosts(filteredArray = null) {
+      const container = document.getElementById('posts-masonry');
+      if (!container) return;
+      updateGuestBanner();
+
+      let items = filteredArray;
+      if (!items) {
+        if (activeFilter === 'my-private') {
+          if (!currentUser) {
+            items = guestDrafts.slice().sort((x, y) => (y.timestamp || 0) - (x.timestamp || 0));
+            if (!items.length) {
+              container.innerHTML = `
+              <div class="col-span-full py-16 text-center text-slate-400 bg-slate-900/50 rounded-3xl border border-white/10 space-y-3">
+                <i class="ph-bold ph-lock-key text-3xl block"></i>
+                <p class="font-bold text-white text-sm">Your private vault is empty</p>
+                <p class="text-xs">You can try the editor as a guest. Entries stay on this device until you create an account.</p>
+                <button type="button" onclick="startGuest()" class="px-4 py-2 rounded-xl bg-sky-500 text-white font-bold text-xs">Try the editor</button>
+              </div>`;
+              return;
+            }
+          } else {
+          items = posts.filter(p => !p.isPublic && (p.ownerUID === currentUser.uid || p.ownerUsername === currentUser.username));
+          }
+        } else if (activeFilter === 'All') {
+          items = posts.filter(p => p.isPublic);
+        } else {
+          items = posts.filter(p => p.isPublic && p.type === activeFilter);
+        }
+      }
+
+      container.innerHTML = '';
+
+      if (items.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-16 text-center text-slate-400 bg-slate-900/50 rounded-3xl border border-white/10 space-y-2">
+            <i class="ph-bold ph-notebook text-3xl block"></i>
+            <p class="font-bold text-white text-sm">No entries found under this section</p>
+          </div>
+        `;
+        return;
+      }
+
+      items.forEach(post => {
+        const card = document.createElement('div');
+        const theme = post.theme || 'theme-slate';
+        const font = post.font || 'font-sans';
+        const isOwner = isGuestPost(post) || currentUser && ((post.ownerUID ? currentUser.uid === post.ownerUID : currentUser.username === post.ownerUsername) || isAdminSessionActive);
+        const hasLiked = currentUser && post.likedBy && (post.likedBy.includes(currentUser.uid) || post.likedBy.includes(currentUser.username));
+
+        card.className = `pin-card relative ${theme} ${font} rounded-3xl overflow-hidden transition-all duration-300 flex flex-col group shadow-xl hover:shadow-2xl hover:border-sky-400/60 cursor-pointer min-h-[220px]`;
+        card.onclick = (e) => {
+          if (['BUTTON', 'I', 'INPUT'].includes(e.target.tagName)) return;
+          openFullViewModal(post.id);
+        };
+
+        let tapeHtml = '';
+        if (post.tape && post.tape !== 'none') {
+          tapeHtml = `<div class="w-full flex justify-center -mt-1.5 mb-2 relative z-30 pointer-events-none"><div class="w-28 h-4 rounded-sm ${post.tape} shadow-md transform -rotate-1"></div></div>`;
+        }
+
+        let stickersHtml = '';
+        if (post.stickers && post.stickers.length > 0) {
+          stickersHtml = `<div class="absolute inset-0 pointer-events-none overflow-hidden z-20">${post.stickers.map(s => `<span style="position: absolute; left: ${s.x}%; top: ${s.y}\%; font-size: 1.4rem; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));">${s.content}</span>`).join('')}</div>`;
+        }
+
+        let imagesHtml = '';
+        if (post.images && post.images.length > 0) {
+          imagesHtml = `<div class="absolute inset-0 pointer-events-none overflow-hidden z-20">${post.images.map(im => `
+            <div style="position: absolute; left: ${im.x}%; top: ${im.y}\%; transform: rotate(${im.rotation || 0}deg);" class="p-0.5 bg-white/20 backdrop-blur-sm rounded-xl shadow-lg border border-white/20">
+              <img src="${im.dataUrl}" style="width: ${(im.width || 140) * 0.7}px; height: auto;" class="rounded-lg object-cover">
+            </div>
+          `).join('')}</div>`;
+        }
+
+        card.innerHTML = `
+          ${tapeHtml}
+          ${stickersHtml}
+          ${imagesHtml}
+
+          ${isOwner ? `
+            <div class="absolute top-3 right-3 z-30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5">
+              <button type="button" onclick="openCreateModal('${post.id}')" title="Edit" class="w-7 h-7 rounded-full bg-slate-900/90 hover:bg-slate-800 text-white flex items-center justify-center text-xs shadow">
+                <i class="ph-bold ph-pencil-simple"></i>
+              </button>
+              <button type="button" onclick="deletePost('${post.id}')" title="Delete" class="w-7 h-7 rounded-full bg-slate-900/90 hover:bg-rose-600 text-white flex items-center justify-center text-xs shadow">
+                <i class="ph-bold ph-trash"></i>
+              </button>
+            </div>
+          ` : ''}
+
+          <div class="p-5 space-y-2.5 relative z-10">
+            <div class="flex items-center justify-between text-[11px] font-mono">
+              <span class="px-2 py-0.5 rounded-full bg-white/10 uppercase font-bold text-sky-300">${post.type}</span>
+              <span class="opacity-60">${post.date}</span>
+            </div>
+
+            <h2 class="text-base font-bold leading-snug">${post.title}</h2>
+            <div class="text-xs opacity-90 leading-relaxed line-clamp-4 note-content">${sanitizeHtml(post.bodyHtml)}</div>
+          </div>
+
+          <div class="p-4 bg-black/25 border-t border-white/5 flex items-center justify-between text-xs opacity-90 relative z-10 mt-auto">
+            <div class="flex items-center gap-2">
+              <img src="${post.authorAvatar}" class="w-6 h-6 rounded-lg object-cover border border-white/20">
+              <strong class="text-white text-[11px]">${post.author}</strong>
+            </div>
+
+            <button type="button" onclick="event.stopPropagation();toggleBookmark('${post.id}')" title="Bookmark entry" class="mr-2 text-xs hover:text-amber-300" aria-label="Bookmark entry">${getStudioData().bookmarks.includes(post.id) ? '★' : '☆'}</button>
+            ${post.isPublic ? `
+              <button type="button" onclick="toggleLike('${post.id}')" class="flex items-center gap-1 hover:text-sky-400 transition ${hasLiked ? 'text-sky-400 font-bold' : 'text-slate-400'}">
+                <i class="ph-fill ${hasLiked ? 'ph-heart text-sky-400' : 'ph-heart'} text-sm"></i>
+                <span class="font-mono text-xs">${post.likes || 0}</span>
+              </button>
+            ` : '<span class="text-[10px] text-indigo-400 font-mono">Vaulted</span>'}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function toggleLike(id) {
+      if (!currentUser || !currentUser.uid) { showToast('Sign in to like entries!'); openAuthModal(); return; }
+      const post = posts.find(p => p.id === id);
+      if (!post || !post.isPublic) return;
+      try {
+        const call = firebase.functions().httpsCallable('toggleLike');
+        await call({ postId: id });
+      } catch (err) { showToast('Like service unavailable. Configure and deploy Cloud Functions first.'); }
+    }
+
+    let activeFullView = null;
+    function openFullViewModal(id) {
+      const post = posts.find(p => p.id === id);
+      if (!post) return;
+      activeFullView = post;
+
+      document.getElementById('fullview-title').textContent = post.title;
+      document.getElementById('fullview-author-avatar').src = post.authorAvatar;
+      document.getElementById('fullview-author-meta').textContent = `Written by ${post.author}`;
+      document.getElementById('fullview-type').textContent = `${post.type} • ${post.isPublic ? 'Public Pin' : 'Private Vault'}`;
+      document.getElementById('fullview-date').textContent = post.date;
+      document.getElementById('fullview-content').innerHTML = sanitizeHtml(post.bodyHtml);
+
+      const stage = document.getElementById('fullview-card-stage');
+      stage.className = `relative rounded-3xl p-6 min-h-[300px] overflow-hidden border border-white/10 ${post.theme || 'theme-slate'} ${post.font || 'font-sans'}`;
+
+      const tapeEl = document.getElementById('fullview-tape');
+      if (post.tape && post.tape !== 'none') {
+        tapeEl.innerHTML = `<div class="w-32 h-4 rounded-sm ${post.tape} shadow-md transform -rotate-1"></div>`;
+      } else {
+        tapeEl.innerHTML = '';
+      }
+
+      const canvasContainer = document.getElementById('fullview-canvas-items');
+      let itemsHtml = '';
+      if (post.images && post.images.length > 0) {
+        itemsHtml += post.images.map(im => `
+          <div style="position: absolute; left: ${im.x}%; top: ${im.y}%; transform: rotate(${im.rotation || 0}deg);" class="p-1 bg-white/20 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 pointer-events-none">
+            <img src="${im.dataUrl}" style="width: ${im.width || 140}px; height: auto;" class="rounded-xl object-cover">
+          </div>
+        `).join('');
+      }
+      if (post.stickers && post.stickers.length > 0) {
+        itemsHtml += post.stickers.map(s => `
+          <span style="position: absolute; left: ${s.x}%; top: ${s.y}%; font-size: 1.8rem; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));">${s.content}</span>
+        `).join('');
+      }
+      canvasContainer.innerHTML = itemsHtml;
+
+      renderFullViewComments();
+      document.getElementById('fullview-modal').classList.remove('hidden');
+      document.getElementById('fullview-modal').classList.add('flex');
+    }
+
+    function closeFullViewModal() {
+      document.getElementById('fullview-modal').classList.add('hidden');
+      document.getElementById('fullview-modal').classList.remove('flex');
+      activeFullView = null;
+    }
+
+    function renderFullViewComments() {
+      if (!activeFullView) return;
+      const list = document.getElementById('fullview-comments-list');
+      const comments = activeFullView.comments || [];
+      if (comments.length === 0) {
+        list.innerHTML = `<span class="text-slate-500 font-mono text-[11px]">No comments yet.</span>`;
+        return;
+      }
+      list.innerHTML = comments.map(c => `
+        <div class="p-2.5 rounded-2xl bg-black/40 border border-white/5 space-y-1">
+          <div class="flex items-center gap-2">
+            <img src="${c.avatar}" class="w-5 h-5 rounded-lg object-cover">
+            <span class="font-bold text-sky-300 font-mono text-[10px]">${c.author}</span>
+          </div>
+          <p class="text-slate-200 text-xs pl-7">${c.text}</p>
+        </div>
+      `).join('');
+    }
+
+    async function postFullViewComment() {
+      if (!currentUser) {
+        showToast("Please sign in to leave a comment!");
+        openAuthModal();
+        return;
+      }
+      const input = document.getElementById('fullview-comment-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const updatedComments = activeFullView.comments ? [...activeFullView.comments] : [];
+      updatedComments.push({
+        author: currentUser.username,
+        authorUID: currentUser.uid,
+        avatar: currentUser.avatarPhoto,
+        text
+      });
+
+      try {
+        if (activeFullView.isPublic) {
+          const call = firebase.functions().httpsCallable('addComment');
+          await call({ postId: activeFullView.id, text });
+        } else {
+          await postRefFor(activeFullView.id).update({ comments: updatedComments });
+          activeFullView.comments = updatedComments;
+        }
+        input.value = '';
+        showToast('Comment posted!');
+      } catch(err) { showToast('Comment failed. Deploy the Cloud Functions backend and check rules.'); }
+    }
+
+    // ==========================================================
+    // INVITE A FRIEND & REFERRAL ENGINE
+    // ==========================================================
+    function openInviteModal() {
+      const inviteUrl = window.location.href.split('#')[0] + (currentUser ? `?ref=${encodeURIComponent(currentUser.username)}` : '');
+      document.getElementById('invite-link-input').value = inviteUrl;
+      document.getElementById('invite-modal').classList.remove('hidden');
+      document.getElementById('invite-modal').classList.add('flex');
+    }
+
+    function closeInviteModal() {
+      document.getElementById('invite-modal').classList.add('hidden');
+      document.getElementById('invite-modal').classList.remove('flex');
+    }
+
+    function copyInviteLink() {
+      const input = document.getElementById('invite-link-input');
+      navigator.clipboard.writeText(input.value).then(() => {
+        showToast("💌 Invite link copied to clipboard!");
+      });
+    }
+
+    function shareViaDevice() {
+      const inviteUrl = document.getElementById('invite-link-input').value;
+      if (navigator.share) {
+        navigator.share({
+          title: "Join me on Cloud Diaries! ☁️",
+          text: "Write aesthetic notes, scrapbook journals, and organize thoughts on Cloud Diaries.",
+          url: inviteUrl
+        }).catch(() => copyInviteLink());
+      } else {
+        copyInviteLink();
+      }
+    }
+
+    function handleIncomingInvite() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const referrer = urlParams.get('ref');
+
+      if (referrer) {
+        showToast(`💌 You were invited to Cloud Diaries by ${referrer}!`);
+        if (!currentUser) {
+          setTimeout(() => {
+            openAuthModal();
+            switchAuthFlow('register');
+          }, 800);
+        }
+      }
+    }
+
+    // ==========================================================
+    // PERSONAL STUDIO: planner, habits, bookmarks, customization,
+    // backup, install prompt, and authenticated collaborative rooms.
+    // ==========================================================
+    let deferredInstallPrompt = null;
+    const STUDIO_KEY = 'sakura_studio_v2';
+    function studioDefaults() { return { tasks: [], habits: [], bookmarks: [], collections: [], collectionByPost: {}, customization: { accent: '#38bdf8', density: 'comfortable', motion: 'normal' }, lastExport: null }; }
+    function getStudioData() {
+      try { return { ...studioDefaults(), ...(JSON.parse(localStorage.getItem(STUDIO_KEY) || '{}')) }; }
+      catch (_) { return studioDefaults(); }
+    }
+    function saveStudioData(data) { localStorage.setItem(STUDIO_KEY, JSON.stringify(data)); updateFeatureStudio(); }
+    function openFeatureStudio() { document.getElementById('feature-studio-modal').classList.remove('hidden'); document.getElementById('feature-studio-modal').classList.add('flex'); updateFeatureStudio(); }
+    function closeFeatureStudio() { document.getElementById('feature-studio-modal').classList.add('hidden'); document.getElementById('feature-studio-modal').classList.remove('flex'); }
+    function escapeStudioText(v) { return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function updateFeatureStudio() {
+      const data = getStudioData();
+      const mine = currentUser ? posts.filter(p => p.ownerUID === currentUser.uid || p.ownerUsername === currentUser.username) : [];
+      const bookmarks = data.bookmarks.map(id => posts.find(p => p.id === id)).filter(Boolean);
+      const doneToday = data.habits.filter(h => (h.completedDates || []).includes(new Date().toISOString().slice(0,10))).length;
+      const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      setText('dash-post-count', mine.length); setText('dash-bookmark-count', bookmarks.length); setText('dash-habit-count', doneToday);
+      setText('dash-summary', currentUser ? `Signed in as ${currentUser.username}${currentUser.emailVerified===false?' · verify email to publish or collaborate':''}. ${data.tasks.filter(t=>!t.done).length} open tasks and ${data.habits.length} habits to keep your momentum gentle and steady.` : 'Sign in to sync your scrapbook. Planner and bookmarks are stored in this browser until a backend is configured.');
+      const taskList = document.getElementById('planner-task-list');
+      if (taskList) taskList.innerHTML = data.tasks.length ? data.tasks.map(t=>`<div class="flex items-center gap-2 rounded-lg bg-black/20 p-2"><input type="checkbox" ${t.done?'checked':''} onchange="togglePlannerTask('${t.id}',this.checked)" aria-label="Complete task"><span class="flex-1 text-xs ${t.done?'line-through text-slate-500':'text-slate-200'}">${escapeStudioText(t.title)}${t.date?` <small class="text-slate-500">· ${escapeStudioText(t.date)}</small>`:''}</span><button onclick="deletePlannerTask('${t.id}')" class="text-rose-300" aria-label="Delete task">×</button></div>`).join('') : '<p class="text-xs text-slate-500">No tasks yet.</p>';
+      const habitList = document.getElementById('habit-list');
+      if (habitList) habitList.innerHTML = data.habits.length ? data.habits.map(h=>{const done=(h.completedDates||[]).includes(new Date().toISOString().slice(0,10)); return `<div class="flex items-center gap-2 rounded-lg bg-black/20 p-2"><input type="checkbox" ${done?'checked':''} onchange="toggleHabit('${h.id}',this.checked)" aria-label="Mark habit complete today"><span class="flex-1 text-xs text-slate-200">${escapeStudioText(h.name)}</span><small class="text-slate-500">${(h.completedDates||[]).length} ✓</small><button onclick="deleteHabit('${h.id}')" class="text-rose-300" aria-label="Delete habit">×</button></div>`}).join('') : '<p class="text-xs text-slate-500">No habits yet.</p>';
+      const collections = document.getElementById('collection-list');
+      if (collections) collections.innerHTML = data.collections.length ? data.collections.map(c=>`<button onclick="viewCollection('${c.id}')" class="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-200 text-[11px]">${escapeStudioText(c.name)} · ${Object.values(data.collectionByPost).filter(v=>v===c.id).length}</button>`).join('') : '<span class="text-xs text-slate-500">No collections yet.</span>';
+      const bookmarkList = document.getElementById('bookmark-list');
+      if (bookmarkList) bookmarkList.innerHTML = bookmarks.length ? bookmarks.map(p=>`<div class="flex items-center gap-2 rounded-lg bg-black/20 p-2"><button onclick="closeFeatureStudio();openFullViewModal('${p.id}')" class="flex-1 text-left text-xs text-slate-200">${escapeStudioText(p.title)}</button><select aria-label="Assign collection" onchange="assignCollection('${p.id}',this.value)" class="max-w-32 bg-slate-950 border border-white/10 rounded p-1 text-[10px] text-slate-300"><option value="">No collection</option>${data.collections.map(c=>`<option value="${c.id}" ${data.collectionByPost[p.id]===c.id?'selected':''}>${escapeStudioText(c.name)}</option>`).join('')}</select><button onclick="toggleBookmark('${p.id}')" class="text-rose-300" aria-label="Remove bookmark">×</button></div>`).join('') : '<p class="text-xs text-slate-500">No bookmarks yet. Use ☆ on any entry.</p>';
+      const accent = document.getElementById('custom-accent'); if (accent) accent.value = data.customization.accent || '#38bdf8';
+      const density = document.getElementById('custom-density'); if (density) density.value = data.customization.density || 'comfortable';
+      const motion = document.getElementById('custom-motion'); if (motion) motion.value = data.customization.motion || 'normal';
+      applyCustomization(data.customization);
+    }
+    function addPlannerTask() { const input=document.getElementById('planner-task-input'), date=document.getElementById('planner-task-date'); const title=input.value.trim(); if(!title)return; const d=getStudioData(); d.tasks.unshift({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),title,date:date.value,done:false,createdAt:Date.now()}); saveStudioData(d); input.value=''; }
+    function togglePlannerTask(id,done) { const d=getStudioData(); const t=d.tasks.find(x=>x.id===id); if(t)t.done=done; saveStudioData(d); }
+    function deletePlannerTask(id) { const d=getStudioData(); d.tasks=d.tasks.filter(x=>x.id!==id); saveStudioData(d); }
+    function addHabit() { const input=document.getElementById('habit-name-input'),name=input.value.trim(); if(!name)return; const d=getStudioData(); d.habits.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name,completedDates:[]}); saveStudioData(d); input.value=''; }
+    function toggleHabit(id,done) { const d=getStudioData(), h=d.habits.find(x=>x.id===id); if(!h)return; const today=new Date().toISOString().slice(0,10); h.completedDates=h.completedDates||[]; h.completedDates=done?[...new Set([...h.completedDates,today])]:h.completedDates.filter(x=>x!==today); saveStudioData(d); }
+    function deleteHabit(id) { const d=getStudioData(); d.habits=d.habits.filter(x=>x.id!==id); saveStudioData(d); }
+    function toggleBookmark(id) { const d=getStudioData(); d.bookmarks=d.bookmarks.includes(id)?d.bookmarks.filter(x=>x!==id):[id,...d.bookmarks]; saveStudioData(d); renderPosts(); }
+    function addCollection() { const input=document.getElementById('collection-name-input'),name=input.value.trim(); if(!name)return; const d=getStudioData(); if(d.collections.some(c=>c.name.toLowerCase()===name.toLowerCase())){showToast('That collection already exists.');return;} d.collections.push({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),name}); saveStudioData(d); input.value=''; }
+    function assignCollection(postId,collectionId) { const d=getStudioData(); if(collectionId)d.collectionByPost[postId]=collectionId; else delete d.collectionByPost[postId]; saveStudioData(d); }
+    function viewCollection(id) { const d=getStudioData(), c=d.collections.find(x=>x.id===id); if(!c)return; const ids=Object.keys(d.collectionByPost).filter(pid=>d.collectionByPost[pid]===id); renderPosts(posts.filter(p=>ids.includes(p.id))); document.getElementById('feed-title').textContent='🔖 '+c.name; closeFeatureStudio(); }
+    function saveCustomization() { const d=getStudioData(); d.customization={accent:document.getElementById('custom-accent').value,density:document.getElementById('custom-density').value,motion:document.getElementById('custom-motion').value}; saveStudioData(d); }
+    function applyCustomization(c={}) { const accent=c.accent||'#38bdf8'; document.documentElement.style.setProperty('--site-accent',accent); document.documentElement.style.setProperty('--custom-density',c.density==='compact'?'0.8':'1'); document.body.style.fontSize=c.density==='compact'?'0.94rem':''; document.documentElement.classList.toggle('reduced-motion',c.motion==='reduced'); }
+    function exportSakuraBackup() { const data=getStudioData(); const ownPosts=currentUser?posts.filter(p=>p.ownerUID===currentUser.uid||p.ownerUsername===currentUser.username):[]; const backup={format:'sakura-no-hana-backup',version:2,exportedAt:new Date().toISOString(),profile:currentUser?{uid:currentUser.uid,username:currentUser.username}:null,posts:ownPosts,studio:data}; const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`sakura-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url); data.lastExport=new Date().toISOString(); saveStudioData(data); document.getElementById('backup-status').textContent='Last export: '+new Date(data.lastExport).toLocaleString(); }
+    async function importSakuraBackup(event) {
+      const file = event.target.files && event.target.files[0]; if (!file) return;
+      try {
+        if (file.size > 10 * 1024 * 1024) throw new Error('Backup exceeds 10 MB.');
+        const parsed = JSON.parse(await file.text());
+        if (parsed.format !== 'sakura-no-hana-backup' || !parsed.studio || !Array.isArray(parsed.posts)) throw new Error('This is not a valid Sakura backup.');
+        if (!confirm('Restore planner, habits, bookmarks and collections? Your current browser data will be replaced. Posts will be re-imported to your account.')) return;
+        const studio = { ...studioDefaults(), ...parsed.studio };
+        if (!currentUser) {
+          localStorage.setItem(STUDIO_KEY, JSON.stringify(studio));
+          showToast('Local tools restored. Sign in to import scrapbook entries.');
+        } else {
+          const idMap = {};
+          for (const p of parsed.posts) {
+            const copy = { ...p, ownerUID: currentUser.uid, ownerUsername: currentUser.username, author: currentUser.username, isPublic: false, timestamp: Date.now() };
+            delete copy.id;
+            const ref = rtdb.ref('private_posts/' + currentUser.uid).push();
+            await ref.set(copy);
+            if (p.id) idMap[p.id] = ref.key;
+          }
+          studio.bookmarks = (studio.bookmarks || []).map(id => idMap[id] || id);
+          const remappedCollections = {};
+          Object.entries(studio.collectionByPost || {}).forEach(([id, collectionId]) => { remappedCollections[idMap[id] || id] = collectionId; });
+          studio.collectionByPost = remappedCollections;
+          localStorage.setItem(STUDIO_KEY, JSON.stringify(studio));
+        }
+        updateFeatureStudio();
+        document.getElementById('backup-status').textContent = 'Backup restored: ' + new Date().toLocaleString();
+        showToast('Backup restored.');
+      } catch (err) { showToast('Restore failed: ' + err.message); }
+      finally { event.target.value = ''; }
+    }
+    window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstallPrompt=e;const b=document.getElementById('install-pwa-btn');if(b)b.classList.remove('hidden');});
+    async function installSakuraPWA() { if(!deferredInstallPrompt){showToast('Install is available from your browser menu after the site is hosted over HTTPS.');return;} deferredInstallPrompt.prompt(); await deferredInstallPrompt.userChoice; deferredInstallPrompt=null; }
+    async function createCollabRoom() { if(!currentUser||!currentUser.uid){showToast('Sign in first to create a shared room.');return;} const name=document.getElementById('collab-room-name').value.trim();if(!name)return; try { const ref=rtdb.ref('collaborationRooms').push(); await ref.set({name,createdBy:currentUser.uid,createdAt:Date.now(),members:{[currentUser.uid]:true},content:'',schemaVersion:1}); await connectCollabRoom(ref.key); document.getElementById('collab-room-name').value=''; } catch(e){showToast('Room creation failed. Check deployed rules and Firebase Auth.');} }
+    async function joinCollabRoom() { if(!currentUser||!currentUser.uid){showToast('Sign in first to join a shared room.');return;} const id=document.getElementById('collab-room-code').value.trim(); if(!id)return; try { await rtdb.ref('collaborationRooms/'+id+'/members/'+currentUser.uid).set(true); await connectCollabRoom(id); }catch(e){showToast('Could not join room. Verify the invite ID and deploy the database rules.');} }
+    async function connectCollabRoom(id) { if(collabUnsubscribe){collabUnsubscribe();collabUnsubscribe=null;} activeCollabRoomId=id; const ref=rtdb.ref('collaborationRooms/'+id); const listener=snap=>{const room=snap.val();if(!room)return;const status=document.getElementById('collab-status');if(status)status.textContent=`Room: ${room.name||'Shared scrapbook'} · ID ${id} · Live sync`;const editor=document.getElementById('collab-room-content');if(editor&&document.activeElement!==editor)editor.value=room.content||'';};ref.on('value',listener,()=>showToast('Collaboration sync failed; verify room membership and rules.'));collabUnsubscribe=()=>ref.off('value',listener);document.getElementById('collab-room-content').disabled=false;document.getElementById('collab-room-code').value=id; }
+    function scheduleCollabSave() { if(!activeCollabRoomId||!currentUser)return; clearTimeout(collabSaveHandle); collabSaveHandle=setTimeout(async()=>{try{await rtdb.ref('collaborationRooms/'+activeCollabRoomId).update({content:document.getElementById('collab-room-content').value,updatedAt:Date.now(),updatedBy:currentUser.uid});}catch(e){showToast('Shared changes could not be saved.');}},450); }
+    function copyCollabRoomId() { const id=activeCollabRoomId||document.getElementById('collab-room-code').value.trim(); if(!id){showToast('Create or open a room first.');return;} navigator.clipboard?.writeText(id).then(()=>showToast('Room ID copied.')).catch(()=>showToast('Room ID: '+id)); }
+
+    // ==========================================================
+    // FILTERING, SEARCH & BOOTSTRAP
+    // ==========================================================
+    function filterType(type) {
+      activeFilter = type;
+      const titleEl = document.getElementById('feed-title');
+
+      document.querySelectorAll('.filter-pill').forEach(pill => {
+        if (
+          (type === 'All' && pill.textContent.includes('All')) ||
+          (type === 'my-private' && pill.textContent.includes('Private')) ||
+          (type !== 'All' && type !== 'my-private' && pill.textContent.toLowerCase().includes(type))
+        ) {
+          pill.className = "filter-pill active px-4 py-1.5 rounded-xl bg-sky-500 text-white shadow-md shadow-sky-500/30 flex items-center gap-1.5";
+        } else {
+          pill.className = "filter-pill px-4 py-1.5 rounded-xl bg-slate-900 text-slate-300 hover:text-sky-300 border border-white/10 transition flex items-center gap-1.5";
+        }
+      });
+
+      titleEl.innerHTML = type === 'my-private' ? '<span>🔒</span> My Private Journal Vault' : 'Community Wall';
+      renderPosts();
+    }
+
+    function handleSearch(q) {
+      const query = q.toLowerCase().trim();
+      if (!query) { renderPosts(); return; }
+      const filtered = posts.filter(p => {
+        if (!p.isPublic && (!currentUser || (currentUser.uid !== p.ownerUID && currentUser.username !== p.ownerUsername))) return false;
+        return p.title.toLowerCase().includes(query) || p.bodyHtml.toLowerCase().includes(query) || p.author.toLowerCase().includes(query);
+      });
+      renderPosts(filtered);
+    }
+
+    function sortFeed(criteria) {
+      if (criteria === 'popular') posts.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+      else if (criteria === 'latest') posts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      renderPosts();
+      showToast(`Sorted by ${criteria}`);
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById('toast-msg');
+      const label = document.getElementById('toast-text');
+      if (!toast || !label) return;
+
+      label.textContent = text;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 2500);
+    }
+
+    window.onload = function() {
+      updateAuthUI();
+      initRealtimeCloudSync();
+      firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+      firebase.auth().onAuthStateChanged(loadAuthenticatedProfile);
+      handleIncomingInvite();
+      updateFeatureStudio();
+      if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('PWA service worker not registered:',err));
+    };
+  </script>
+</body>
+</html>
