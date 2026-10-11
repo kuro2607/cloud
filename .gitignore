@@ -1,0 +1,7 @@
+functions/node_modules/
+.firebase/
+service-account*.json
+*.log
+migration/user-map.json
+migration/private-backups/*.json
+migration/legacy-user-index.json
